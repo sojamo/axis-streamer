@@ -13,12 +13,12 @@ Data is streamed over UDP port 7002. When data arrives and is parsed, the follow
 
 - open the terminal
 - install node and npm if you haven't done so yet, an installer is available from the [nodejs website](https://nodejs.org/en/download/). These are 2 alternatives to install nodejs with [brew](https://brew.sh/) or [nvm](https://github.com/nvm-sh/nvm).
-- check if node and npm are properly installed by typing `node --version` and `npm --version` in the terminal
-- install npx with `npm install -g npx`
+- check if node and yarn are properly installed by typing `node --version` and `yarn --version` in the terminal
+- install npx with `yarn global add npx`
 - clone the project-repository from https://github.com/sojamo/axis-streamer.git to your computer `git clone https://github.com/sojamo/axis-streamer.git`
 - `cd` into the repository root folder `cd axis-streamer`
-- install project dependencies with `npm i`
-- run `npm run stream` for streaming data from Axis Neuron (see details below) or `npm run load` to load and playback a .bvh file
+- install project dependencies with `yarn`
+- run `yarn run stream` for streaming data from Axis Neuron (see details below) or `yarn run load` to load and playback a .bvh file (see dev/loader.js for details)
 - open http://localhost:5080
 
 To stream data from Axis Neuron:
