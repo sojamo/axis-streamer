@@ -1,13 +1,14 @@
 {
   "name": "axis-streamer",
   "version": "0.1.0",
-  "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and websocket.",
+  "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and WebSocket.",
   "private": true,
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "stream": "npx babel-node ./dev/streamer.js",
-    "load": "npx babel-node ./dev/loader.js"
+    "load": "npx babel-node ./dev/loader.js",
+    "sim": "npx babel-node ./dev/sim.js"
   },
   "author": {
     "name":"Andreas Schlegel",
