@@ -43,9 +43,9 @@ To stream data from file use `yarn run load`. You need to place a .bvh file name
 
 ```
 axis-streamer/
-├── external/
-    ├── app/
-    ├── storage/
+external/
+├── app/
+├── storage/
 ```
 
 ### Simulation 
