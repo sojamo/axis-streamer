@@ -23,7 +23,11 @@ Alternatively data can be read and played back from a .bvh file (see [dev/loader
 - call `yarn run stream` for streaming data from Axis Neuron (see details below) or use `yarn run load` to load and playback a .bvh file (see dev/loader.js for details) or use a simulation `yarn run sim`.
 - open http://localhost:5080
 
-To stream data from Axis Neuron:
+## Streaming Data
+
+### Real-time
+
+To stream data from Axis Neuron use `yarn run stream`
 
 - open Axis Neuron 
 - open a .raw mocap file or connect your sensor suit
@@ -32,6 +36,22 @@ To stream data from Axis Neuron:
 - under _Preferences → Broadcasting_ choose _UDP_ and scroll down to section _BVH_. Here tick _enable_, set _Format_ to _Binary_, the _Client Port_ should be 7002
 - confirm with _OK_
 - data should now stream to the application and animate the skeleton in the browser at http://localhost:5080
+
+### From file
+
+To stream data from file use `yarn run load`. You need to place a .bvh file named `test-load.bvh` into folder `external/storage`. the following folder structure is required. This file is not included int the repo since it tends to be in the MB-size.
+
+```
+axis-streamer/
+├── external/
+    ├── app/
+    ├── storage/
+```
+
+### Simulation 
+
+To stream data from code use `yarn run sim`. This will call script [dev/sim.js](dev/sim.js) which animates one leg and one arm swinging back and forth, left and right.
+
 
 ## Ports
 
