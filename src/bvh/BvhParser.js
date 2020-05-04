@@ -24,10 +24,12 @@ export default class BvhParser {
     // to process .bvh file.
   }
 
-  async readFile(theFile, theId = 1) {
+  async readFile(options = {}) {
+    const id = options.id || 1;
+    const file = options.file || './assets/test.bvh';
     const pReadFile = promisify(fs.readFile);
-    const body = new BvhBody(theId);
-    await pReadFile(theFile, 'utf8').then((theResult) => {
+    const body = new BvhBody(id);
+    await pReadFile(file, 'utf8').then((theResult) => {
       this.parse({
         body,
         read: theResult.split(/[\r\n]+/g),
@@ -127,25 +129,6 @@ export default class BvhParser {
         args.body.frames.push(args.lines[currentLine].frames);
       }
     }
-  }
-
-  /**
-   * processAxisNeuronData
-   *
-   * Data received from Axis Neuron as a binary stream
-   * (see BvhStream) will be passed on to each joint and
-   * processed accordingly. First the skeleton structure
-   * us flattened to more conveniently access individual
-   * joints to the assign the new position and
-   * rotation values.
-   *
-   * @param {*} theData
-   */
-  processAxisNeuronData(theBody, theData) {
-    let flat = theBody.flatten();
-    Object.keys(theData.channels).forEach((index) => {
-      flat[index].axisNeuronPositionRotation = theData.channels[index];
-    });
   }
 }
 
