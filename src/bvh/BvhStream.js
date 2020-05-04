@@ -10,12 +10,12 @@
  *
  */
 
-import Broadcast from '../Broadcast';
+import BvhBody from './BvhBody';
 
 export default class BvhStream {
   constructor(options = {}) {
     this.initSocket(options.port || 7002);
-    this.#fn = options.target.processAxisNeuronData.bind(options.target);
+    this.#target = options.target || [];
     this.#collect = '';
   }
 
@@ -34,7 +34,9 @@ export default class BvhStream {
 
     client.on('listening', () => {
       const address = client.address();
-      console.log(`client listening ${address.address}:${address.port}`);
+      console.log(
+        `### Listening for \n### BVH stream from Axis Neuron\n### ${address.address}:${address.port}\n`,
+      );
     });
 
     client.bind(thePort);
@@ -79,21 +81,13 @@ export default class BvhStream {
         index++;
       }
 
-      /**
-       *  fn()
-       * a function to broadcast data received from axis neuron
-       * - frameIndex
-       * the frameIndex provided by the received data packet
-       * - channels
-       * each channel is packaged into its own sub-array, for
-       * convenience and option to extract per BvhBody.skeleton,
-       * see BvhBody.skeleton
-       */
-
-      this.#fn({ frameIndex, channels });
+      /* target is an array of BvhBody(s) */
+      this.#target.forEach((el) => {
+        el.processIncomingData({ frameIndex, channels });
+      });
     }
   }
 
   #collect;
-  #fn;
+  #target;
 }
