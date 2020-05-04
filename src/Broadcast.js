@@ -16,6 +16,9 @@ export default class Broadcast {
 
   set osc(theOptions) {
     this.#osc = new OSC(theOptions);
+    console.log(
+      `### Setting default OSC remote to\n### ${theOptions.remoteAddress}:${theOptions.remotePort}\n`,
+    );
   }
 
   set ws(theOptions) {
@@ -100,18 +103,11 @@ class OSC {
     this.#remoteAddress = options.remoteAddress || '127.0.0.1';
     this.#remotePort = options.remotePort || 5000;
     this.#localAddress = options.localAddress || '0.0.0.0';
-    this.#localPort = options.localPort || 5001;
-    this.#route =
-      options.route ||
-      ((m) => {
-        console.log(m);
-      });
-
-    // TODO
-    // prefix should come from the skeleton data
-    this.#prefix = options.prefix || '/pn/1';
+    this.#localPort = options.localPort || 5000;
+    this.#route = options.route || ((m) => {});
 
     const _self = this;
+    const group = options.group || [];
 
     this.#udpPort = new osc.UDPPort({
       localAddress: this.#localAddress,
@@ -122,14 +118,26 @@ class OSC {
 
     this.#udpPort.on('ready', () => {
       let ipAddresses = this.getIPAddresses();
-      console.log('Listening for OSC over UDP.');
-      ipAddresses.forEach((addr) => {
-        console.log(' Host:', addr, ', Port:', _self.#udpPort.options.localPort);
+      const out = [];
+      ipAddresses.forEach((addr, i) => {
+        out.push([addr, _self.#udpPort.options.localPort]);
       });
+      console.table(out);
     });
 
     this.#udpPort.on('message', (m) => {
       _self.#route(m);
+      // extract id from address pattern
+      const id = m;
+      let body;
+      group.forEach((el) => {
+        // check if any el matches id
+      });
+      if (body === undefined) {
+        body = new BvhBody(id);
+        body.owner = BvhBody.owner.OTHER;
+        group.push(body);
+      }
     });
 
     this.#udpPort.on('error', (err) => {
@@ -175,7 +183,6 @@ class OSC {
     const source = options.source !== undefined ? options.source : [];
     const isUVW = options.isUVW || false;
     const args = [];
-
     source.forEach((el0) => {
       const id = el0.id;
       const address = this.getPrefix(id) + Broadcast.addressSpace[path];
@@ -258,17 +265,8 @@ class OSC {
     return ipAddresses;
   }
 
-  getAddressFor(theJoint, theType, theValue) {
-    let joint = Broadcast.addressSpace[theJoint];
-    let type = Broadcast.addressSpace[theType];
-    let value = `/${theValue}`;
-    // TODO check if joint or type are undefined, then abort
-    return this.#prefix + joint + type + value;
-  }
-
   #localAddress;
   #localPort;
-  #prefix;
   #remoteAddress;
   #remotePort;
   #route;
