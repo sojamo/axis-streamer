@@ -13,6 +13,7 @@ export default class BvhBody {
     this.#center = false;
     this.#flat = [];
     this.#lines = [];
+    this.#owner = BvhBody.owner.SELF;
   }
 
   /**
@@ -22,7 +23,7 @@ export default class BvhBody {
    */
   update() {
     this.updateJoint(this.root);
-    this.#flat = this.flatten();
+    this.flatten();
   }
 
   /**
@@ -38,7 +39,7 @@ export default class BvhBody {
    *
    */
   flatten() {
-    return this.flattenFor(this.root, {});
+    this.#flat = this.flattenFor(this.root, {});
   }
 
   flattenFor(theJoint, theList) {
@@ -81,17 +82,8 @@ export default class BvhBody {
         channels[BvhBody.skeleton[index]] = v;
         index++;
       }
-      //   this.processAxisNeuronData({
-      //     body: this,
-      //     frameIndex: theFrameIndex,
-      //     channels,
-      //   });
-      // TODO
-      // same as BvhParser.processAxisNeuronData
-      this.#flat = this.flatten();
-      Object.keys(channels).forEach((index) => {
-        this.#flat[index].axisNeuronPositionRotation = channels[index];
-      });
+
+      this.processIncomingData({ frameIndex: theFrameIndex, channels });
     } else {
       console.warn(
         'BvhBody.play(), wrong data-count: should be 354 but is',
@@ -99,6 +91,26 @@ export default class BvhBody {
         'cant play frame',
       );
     }
+  }
+
+  /**
+   * processIncomingData
+   *
+   * Data received from Axis Neuron as a binary stream
+   * (see BvhStream) will be passed on to each joint and
+   * processed accordingly. First the skeleton structure
+   * us flattened to more conveniently access individual
+   * joints to the assign the new position and
+   * rotation values.
+   *
+   * @param {*} theData
+   */
+  processIncomingData(theData) {
+    // theData = {frameIndex, channels}
+    this.flatten();
+    Object.keys(theData.channels).forEach((index) => {
+      this.#flat[index].axisNeuronPositionRotation = theData.channels[index];
+    });
   }
 
   getFrame(theFrame) {
@@ -182,6 +194,10 @@ export default class BvhBody {
     return this.#center;
   }
 
+  get owner() {
+    return this.#owner;
+  }
+
   /* setter */
 
   set frameTime(theValue) {
@@ -211,6 +227,10 @@ export default class BvhBody {
     this.#root = theJoint;
   }
 
+  set owner(theEnum) {
+    this.#owner = theEnum;
+  }
+
   /* static */
 
   static radians = (degrees) => {
@@ -228,7 +248,13 @@ export default class BvhBody {
   #id;
   #lines;
   #nbFrames;
+  #owner;
   #root;
+
+  static owner = {
+    SELF: 0,
+    OTHER: 1,
+  };
 
   static defaultSkeleton = [
     'Hips',
