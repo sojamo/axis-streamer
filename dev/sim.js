@@ -10,12 +10,12 @@ let frameCount = 0;
 
 async function init() {
   parser = new BvhParser();
-  body.push(await parser.readFile('./assets/test.bvh'));
+  body.push(await parser.readFile());
 
   /* first, initialise our broadcaster */
   web = new Server();
   broadcastFor = new Broadcast();
-  broadcastFor.osc = { remoteAddress: '127.0.0.1', remotePort: 5000 };
+  broadcastFor.osc = { remoteAddress: '127.0.0.1', remotePort: 5001 };
 
   /* stick to a good update-rate of 50 fps */
   setInterval(update, 20);

@@ -23,16 +23,18 @@ async function init() {
    *
    */
 
-  const f = path.join(__dirname, '../../external/storage/test-load.bvh');
+  const file = path.join(__dirname, '../../external/storage/test-load.bvh');
 
-  body.push(await parser.readFile(f, 1));
+  body.push(await parser.readFile({ file, id: 1 }));
+  console.log(`loading file\n${file}\n  ${body.length} BvhBody(s)`);
 
-  console.log('loading file', f, 'done.');
-  console.log(body.nbFrames, body.frameTime, body.id);
+  body.forEach((b) => {
+    console.log(`  id: ${b.id}\tframes: ${b.nbFrames}\tframeTime: ${b.frameTime}`);
+  });
 
   web = new Server();
-  broadcastFor = new Broadcast();
-  broadcastFor.osc = { remoteAddress: '127.0.0.1', remotePort: 5000 };
+  broadcastFor = new Broadcast({ group: body });
+  broadcastFor.osc = { remoteAddress: '127.0.0.1', remotePort: 5001 };
 
   /* stick to a good update-rate of 50 fps */
   setInterval(update, 20);
