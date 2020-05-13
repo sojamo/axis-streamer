@@ -19,10 +19,7 @@ import * as fs from 'fs';
 import { promisify } from 'util';
 
 export default class BvhParser {
-  constructor(theBvh) {
-    // initialise local variables
-    // to process .bvh file.
-  }
+  constructor() {}
 
   async readFile(options = {}) {
     const id = options.id === undefined ? 1 : options.id;

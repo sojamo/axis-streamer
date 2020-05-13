@@ -5,6 +5,7 @@
  *
  */
 import BvhBody from './bvh/BvhBody';
+import BvhParser from './bvh/BvhParser';
 import * as osc from 'osc';
 import * as ws from 'ws';
 
@@ -105,6 +106,7 @@ class OSC {
     this.#route = options.route || ((m) => {});
 
     const _self = this;
+    console.log(options.source);
     const entities = options.source || [];
 
     this.#udpPort = new osc.UDPPort({
@@ -122,20 +124,24 @@ class OSC {
     });
 
     this.#udpPort.on('message', (m) => {
-      return;
+      if (m.address.startsWith('/pn/') === false) {
+        return;
+      }
 
       // TODO explain how route works.
       // A route is responsible for forwarding incoming
       // messages to other connected clients.
       // A route needs to be specified when instance
       // of OSC is created.
-      _self.#route(m);
+
+      // _self.#route(m);
 
       /* extract id from address pattern */
       const id = m.address.match(/\/(\d+)/)[1];
-      console.log('got message from', id, 'total registered bodies:', entities.length);
+      console.log('got message from', id, 'total number of registered bodies:', entities.length);
 
       let body;
+      return;
 
       entities.some((el) => {
         /* check if a body matches the id received */
@@ -147,7 +153,9 @@ class OSC {
       });
 
       if (body === undefined) {
-        body = new BvhBody(id);
+        // needs await
+        body = new BvhParser().readFile();
+        // body = new BvhBody(id);
         body.owner = BvhBody.owner.OTHER;
         entities.push(body);
       }

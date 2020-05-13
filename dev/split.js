@@ -19,7 +19,7 @@ async function init() {
   /* first, initialise our broadcaster */
   web = new Server();
   broadcastFor = new Broadcast();
-  broadcastFor.osc = {};
+  broadcastFor.osc = { source: entities };
 
   destinations.push({ address: '127.0.0.1', port: 5001 });
 
