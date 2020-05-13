@@ -25,7 +25,10 @@ export default class BvhParser {
   }
 
   async readFile(options = {}) {
-    const id = options.id || 1;
+    const id = options.id === undefined ? 1 : options.id;
+    // NOTE || value OR default (options.id || 1) will not
+    // work if we can expect 0 as value.
+
     const file = options.file || './assets/test.bvh';
     const pReadFile = promisify(fs.readFile);
     const body = new BvhBody(id);
