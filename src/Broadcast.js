@@ -204,6 +204,7 @@ class OSC {
    * @param {*} options
    *
    */
+
   xyz(options = {}) {
     /* destination specific */
     const dest = options.dest || [];
@@ -218,42 +219,96 @@ class OSC {
     const range = options.range || BvhBody.defaultSkeleton;
     const source = options.source !== undefined ? options.source : [];
     const isUVW = options.isUVW || false;
+    const isSplit = options.split || false;
 
     source.forEach((el0) => {
       const id = el0.id;
       const args = [];
       const address = this.getPrefix(id) + Broadcast.addressSpace[path];
+      const split = [];
       range.forEach((el1) => {
         const joint = el0.flat[el1];
         if (joint !== undefined) {
-          args.push({ type: 'f', value: joint.positionAbsolute.x });
-          args.push({ type: 'f', value: joint.positionAbsolute.y });
-          args.push({ type: 'f', value: joint.positionAbsolute.z });
+          const x = joint.positionAbsolute.x;
+          const y = joint.positionAbsolute.y;
+          const z = joint.positionAbsolute.z;
+
+          args.push({ type: 'f', value: x });
+          args.push({ type: 'f', value: y });
+          args.push({ type: 'f', value: z });
+
+          if (isSplit === true) {
+            const addr = `/pn/${id}${Broadcast.addressSpace[el1]}${Broadcast.addressSpace.positionAbsolute}`;
+            split.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
+            split.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
+            split.push({ address: `${addr}/z`, args: { type: 'f', value: z } });
+          }
           if (isUVW) {
-            args.push({ type: 'f', value: joint.rotation.x });
-            args.push({ type: 'f', value: joint.rotation.y });
-            args.push({ type: 'f', value: joint.rotation.z });
+            const u = joint.rotation.x;
+            const v = joint.rotation.y;
+            const w = joint.rotation.z;
+
+            args.push({ type: 'f', value: u });
+            args.push({ type: 'f', value: v });
+            args.push({ type: 'f', value: w });
+
+            if (isSplit === true) {
+              const addr = `/pn/${id}${Broadcast.addressSpace[el1]}${Broadcast.addressSpace.rotation}`;
+              split.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
+              split.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
+              split.push({ address: `${addr}/z`, args: { type: 'f', value: w } });
+            }
           }
           if (joint.hasEndPoint === true) {
-            args.push({ type: 'f', value: joint.endPositionAbsolute.x });
-            args.push({ type: 'f', value: joint.endPositionAbsolute.y });
-            args.push({ type: 'f', value: joint.endPositionAbsolute.z });
+            const x = joint.endPositionAbsolute.x;
+            const y = joint.endPositionAbsolute.y;
+            const z = joint.endPositionAbsolute.z;
+
+            args.push({ type: 'f', value: x });
+            args.push({ type: 'f', value: y });
+            args.push({ type: 'f', value: z });
+
+            if (isSplit === true) {
+              const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
+                Broadcast.addressSpace.positionAbsolute
+              }`;
+
+              split.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
+              split.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
+              split.push({ address: `${addr}/z`, args: { type: 'f', value: z } });
+            }
             if (isUVW) {
-              args.push({ type: 'f', value: joint.rotation.x });
-              args.push({ type: 'f', value: joint.rotation.y });
-              args.push({ type: 'f', value: joint.rotation.z });
+              const u = joint.rotation.x;
+              const v = joint.rotation.y;
+              const w = joint.rotation.z;
+
+              args.push({ type: 'f', value: u });
+              args.push({ type: 'f', value: v });
+              args.push({ type: 'f', value: w });
+
+              if (isSplit === true) {
+                const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
+                  Broadcast.addressSpace.rotation
+                }`;
+                split.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
+                split.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
+                split.push({ address: `${addr}/z`, args: { type: 'f', value: w } });
+              }
             }
           }
         }
       });
 
       /* send to other remote desitnations if available */
-      dest.forEach((el) => {
-        const remote = el.address || undefined;
-        const port = el.port || -1;
+      dest.forEach((destination) => {
+        const remote = destination.address || undefined;
+        const port = destination.port || -1;
         if (remote !== undefined && port !== -1) {
           this.#udpPort.send({ address, args }, remote, port);
         }
+        split.forEach((message) => {
+          this.#udpPort.send(message, remote, port);
+        });
       });
     });
   }

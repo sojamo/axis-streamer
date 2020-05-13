@@ -16,7 +16,8 @@
     "stream": "npx babel-node ./dev/streamer.js",
     "load": "npx babel-node ./dev/loader.js",
     "sim": "npx babel-node ./dev/sim.js",
-    "auto": "npx babel-node ./dev/auto.js"
+    "auto": "npx babel-node ./dev/auto.js",
+    "split": "npx babel-node ./dev/split.js"
   },
   "repository": {
     "type": "git",
