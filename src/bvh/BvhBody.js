@@ -5,7 +5,7 @@ export default class BvhBody {
     this.#id = theId;
     this.#nbFrames = 0;
     this.#frameTime = 0;
-    this.currentFrame = 0;
+    this.#currentFrame = 0;
     this.motionLoop = false;
     this.#root = undefined;
     this.joints = [];
@@ -52,12 +52,9 @@ export default class BvhBody {
   /**
    * play
    *
-   * @param {*} theFrameIndex
    */
-  play(theFrameIndex) {
-    theFrameIndex = theFrameIndex < 0 ? 0 : theFrameIndex;
-    theFrameIndex = theFrameIndex >= this.nbFrames ? this.nbFrames - 1 : theFrameIndex;
-    const data = this.getFrame(theFrameIndex);
+  play() {
+    const data = this.getFrame(this.currentFrame);
     const dataLength = data.length;
     /**
      * TODO
@@ -83,7 +80,7 @@ export default class BvhBody {
         index++;
       }
 
-      this.processIncomingData({ frameIndex: theFrameIndex, channels });
+      this.processIncomingData({ frameIndex: this.currentFrame, channels });
     } else {
       console.warn(
         'BvhBody.play(), wrong data-count: should be 354 but is',
@@ -194,6 +191,10 @@ export default class BvhBody {
     return this.#center;
   }
 
+  get currentFrame() {
+    return this.#currentFrame;
+  }
+
   get owner() {
     return this.#owner;
   }
@@ -213,6 +214,12 @@ export default class BvhBody {
   }
   set center(theValue) {
     this.#center = theValue;
+  }
+
+  set currentFrame(theFrameIndex) {
+    theFrameIndex = theFrameIndex < 0 ? 0 : theFrameIndex;
+    theFrameIndex = theFrameIndex >= this.nbFrames ? this.nbFrames - 1 : theFrameIndex;
+    this.#currentFrame = theFrameIndex;
   }
 
   set flat(theValue) {
@@ -243,6 +250,7 @@ export default class BvhBody {
   };
 
   #center;
+  #currentFrame;
   #flat;
   #frameTime;
   #id;
