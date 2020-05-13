@@ -3,9 +3,11 @@ import Broadcast from '../src/Broadcast';
 import Server from '../src/Server';
 import path from 'path';
 
-let body = [];
-let broadcastFor;
+let entities = [];
 let web;
+let broadcastFor;
+let destinations = [];
+
 let frameIndex = 0;
 
 async function init() {
@@ -24,17 +26,22 @@ async function init() {
    */
 
   const file = path.join(__dirname, '../../external/storage/test-load.bvh');
+  const b1 = await parser.readFile({ file, id: 1 });
 
-  body.push(await parser.readFile({ file, id: 1 }));
-  console.log(`loading file\n${file}\n  ${body.length} BvhBody(s)`);
+  entities.push(b1);
 
-  body.forEach((b) => {
+  console.log(`loading file\n${file}\n  ${entities.length} BvhBody(s)`);
+
+  entities.forEach((b) => {
     console.log(`  id: ${b.id}\tframes: ${b.nbFrames}\tframeTime: ${b.frameTime}`);
   });
 
+  /* initialise network components */
   web = new Server();
-  broadcastFor = new Broadcast({ group: body });
-  broadcastFor.osc = { remoteAddress: '127.0.0.1', remotePort: 5001 };
+  broadcastFor = new Broadcast({ source: entities });
+  broadcastFor.osc = {};
+
+  destinations.push({ address: '127.0.0.1', port: 5001 });
 
   /* stick to a good update-rate of 50 fps */
   setInterval(update, 20);
@@ -52,17 +59,24 @@ async function init() {
 }
 
 function update() {
-  body.forEach((el) => {
-    frameIndex += 5;
-    frameIndex %= el.nbFrames;
-    el.play(frameIndex);
-    el.update();
+  frameIndex += 4;
+  entities.forEach((body) => {
+    body.currentFrame = frameIndex % body.nbFrames;
+    body.play();
+    body.update();
   });
 }
 
 function broadcast() {
-  web.xyz({ source: body });
-  broadcastFor.osc.xyz({ source: body });
+  web.xyz({
+    source: entities,
+  });
+
+  broadcastFor.osc.xyz({
+    source: entities,
+    dest: destinations,
+    split: true,
+  });
 }
 
 (async () => {
