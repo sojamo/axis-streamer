@@ -100,20 +100,16 @@ class WebSocket {
 
 class OSC {
   constructor(options) {
-    this.#remoteAddress = options.remoteAddress || '127.0.0.1';
-    this.#remotePort = options.remotePort || 5000;
     this.#localAddress = options.localAddress || '0.0.0.0';
     this.#localPort = options.localPort || 5000;
     this.#route = options.route || ((m) => {});
 
     const _self = this;
-    const group = options.group || [];
+    const entities = options.source || [];
 
     this.#udpPort = new osc.UDPPort({
       localAddress: this.#localAddress,
       localPort: this.#localPort,
-      remoteAddress: this.#remoteAddress,
-      remotePort: this.#remotePort,
     });
 
     this.#udpPort.on('ready', () => {
@@ -126,29 +122,69 @@ class OSC {
     });
 
     this.#udpPort.on('message', (m) => {
+      return;
+
+      // TODO explain how route works.
+      // A route is responsible for forwarding incoming
+      // messages to other connected clients.
+      // A route needs to be specified when instance
+      // of OSC is created.
       _self.#route(m);
-      // extract id from address pattern
-      const id = m;
+
+      /* extract id from address pattern */
+      const id = m.address.match(/\/(\d+)/)[1];
+      console.log('got message from', id, 'total registered bodies:', entities.length);
+
       let body;
-      group.forEach((el) => {
-        // check if any el matches id
+
+      entities.some((el) => {
+        /* check if a body matches the id received */
+        const isMatch = el.id === id;
+        if (isMatch) {
+          body = el;
+        }
+        return isMatch;
       });
+
       if (body === undefined) {
         body = new BvhBody(id);
         body.owner = BvhBody.owner.OTHER;
-        group.push(body);
+        entities.push(body);
       }
+
+      // console.log('Amount of BvhBody registered:', group.length);
     });
 
     this.#udpPort.on('error', (err) => {
       console.log(err);
+      //
+      // TODO when receiving an (or after receiving multiple
+      // for some time) error message, filter out address and
+      // port and ignore when sending unless remote is available
+      // again (periodically check after lost connection, or
+      // get the remote to send a activate-request or ping, etc.
+      // to re-activate broadcasting)
+      //
+      // Error: send EHOSTDOWN 192.168.195.50:5000
+      // at doSend (dgram.js:681:16)
+      // at defaultTriggerAsyncIdScope (internal/async_hooks.js:313:12)
+      // at afterDns (dgram.js:627:5)
+      // at processTicksAndRejections (internal/process/task_queues.js:85:21) {
+      // errno: -64,
+      // code: 'EHOSTDOWN',
+      // syscall: 'send',
+      // address: '192.168.195.50',
+      // port: 5000
+      // }
     });
 
     this.#udpPort.open();
   }
 
-  sendRaw(address, args, remote, port) {
-    this.#udpPort.send({ address, args }, remote || this.remoteAddress, port || this.remotePort);
+  sendRaw(address, args, dest = []) {
+    dest.forEach((el) => {
+      this.#udpPort.send({ address, args }, el.address, el.port);
+    });
   }
 
   /**
@@ -182,9 +218,10 @@ class OSC {
     const range = options.range || BvhBody.defaultSkeleton;
     const source = options.source !== undefined ? options.source : [];
     const isUVW = options.isUVW || false;
-    const args = [];
+
     source.forEach((el0) => {
       const id = el0.id;
+      const args = [];
       const address = this.getPrefix(id) + Broadcast.addressSpace[path];
       range.forEach((el1) => {
         const joint = el0.flat[el1];
@@ -210,15 +247,12 @@ class OSC {
         }
       });
 
-      /* send to default remote address */
-      this.#udpPort.send({ address, args });
-
-      /* send to other remotes if available */
+      /* send to other remote desitnations if available */
       dest.forEach((el) => {
         const remote = el.address || undefined;
         const port = el.port || -1;
         if (remote !== undefined && port !== -1) {
-          this.#udpPort.send({ addr, args }, remote, port);
+          this.#udpPort.send({ address, args }, remote, port);
         }
       });
     });
@@ -267,8 +301,6 @@ class OSC {
 
   #localAddress;
   #localPort;
-  #remoteAddress;
-  #remotePort;
   #route;
   #udpPort;
 }
