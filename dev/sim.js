@@ -5,17 +5,23 @@ import Server from '../src/Server';
 let broadcastFor;
 let web;
 let parser;
-let body = [];
+const entities = [];
+const destinations = [];
+
 let frameCount = 0;
 
 async function init() {
   parser = new BvhParser();
-  body.push(await parser.readFile());
+  const b0 = await parser.readFile();
+
+  entities.push(b0);
 
   /* first, initialise our broadcaster */
   web = new Server();
   broadcastFor = new Broadcast();
-  broadcastFor.osc = { remoteAddress: '127.0.0.1', remotePort: 5001 };
+  broadcastFor.osc = {};
+
+  destinations.push({ address: '127.0.0.1', port: 5001 });
 
   /* stick to a good update-rate of 50 fps */
   setInterval(update, 20);
@@ -42,8 +48,8 @@ function update() {
 }
 
 function animate() {
-  body.forEach((el) => {
-    el.update();
+  entities.forEach((body) => {
+    body.update();
 
     /* the naming convention for keys follows the
      * Axis Neuron Manual naming convention (p.84)
@@ -56,18 +62,19 @@ function animate() {
      *
      */
 
-    el.flat['LeftUpLeg'].zRotation = Math.sin(frameCount * 0.01) * 20;
-    el.flat['LeftUpLeg'].xRotation = Math.cos(frameCount * 0.1) * 40;
+    /** TODO use a function instead of making changes to array flat */
+    body.flat['LeftUpLeg'].zRotation = Math.sin(frameCount * 0.01) * 20;
+    body.flat['LeftUpLeg'].xRotation = Math.cos(frameCount * 0.1) * 40;
 
-    el.flat['LeftLeg'].zRotation = Math.sin(frameCount * 0.1) * 10;
-    el.flat['LeftLeg'].xRotation = Math.cos(frameCount * 0.1) * 10;
+    body.flat['LeftLeg'].zRotation = Math.sin(frameCount * 0.1) * 10;
+    body.flat['LeftLeg'].xRotation = Math.cos(frameCount * 0.1) * 10;
 
-    el.flat['RightArm'].zRotation = Math.sin(frameCount * 0.1) * 30;
-    el.flat['RightArm'].xRotation = Math.cos(frameCount * 0.1) * 50;
+    body.flat['RightArm'].zRotation = Math.sin(frameCount * 0.1) * 30;
+    body.flat['RightArm'].xRotation = Math.cos(frameCount * 0.1) * 50;
   });
 }
 
 function broadcast() {
-  web.xyz({ source: body });
-  broadcastFor.osc.xyz({ source: body });
+  web.xyz({ source: entities });
+  broadcastFor.osc.xyz({ source: entities, dest: destinations });
 }
