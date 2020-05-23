@@ -71,6 +71,7 @@ export default class Server {
   xyz(options = {}) {
     const range = options.range || BvhConstants.defaultSkeleton;
 
+    this.#source.forEach((el0) => {
       const id = el0.id;
       const data = {};
       range.forEach((el1) => {
