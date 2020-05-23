@@ -10,13 +10,15 @@
  *
  */
 
-import BvhBody from './bvh/BvhBody';
+import BvhConstants from './bvh/BvhConstants';
 import express from 'express';
 import path from 'path';
 import socket from 'socket.io';
 
 export default class Server {
+  #source;
   constructor(options = {}) {
+    this.#source = options.source !== undefined ? options.source : [];
     const _self = this;
     const app = express();
     const groupId = 'axis';
@@ -25,7 +27,8 @@ export default class Server {
     app.use(express.static(path.join(__dirname, '../public')));
 
     const server = app.listen(options.port || 5080, () => {
-      console.log(`HTTP server listening on port ${server.address().port}`);
+      const port = server.address().port;
+      console.log(`### Web Server at\n### http://localhost:${port}\n`);
     });
 
     /**
@@ -66,10 +69,8 @@ export default class Server {
   }
 
   xyz(options = {}) {
-    const source = options.source !== undefined ? options.source : [];
-    const range = options.range || BvhBody.defaultSkeleton;
+    const range = options.range || BvhConstants.defaultSkeleton;
 
-    source.forEach((el0) => {
       const id = el0.id;
       const data = {};
       range.forEach((el1) => {
