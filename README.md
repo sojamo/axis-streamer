@@ -1,15 +1,13 @@
 # Axis Streamer
 
-
 A Node.js based Axis Neuron mocap reader that listens for streams of data coming from the Axis Neuron application. Data is streamed over UDP as BVH-binary version 1.1.0.0 so that it can be read and interpreted by the axis-streamer application.
 
 Data is streamed from Axis Neuron over UDP port 7002. When data arrives and is parsed, the following options are available:
 
-1. __OSC broadcast__ forward absolute joint positions as OSC messages over UDP to OSC receivers (by default receivers listening on port 5000)
-2. __WebSocket__ send absolute joint positions to a web-app listening at default port 5080
+1. **OSC broadcast** forward absolute joint positions as OSC messages over UDP to OSC receivers (by default receivers listening on port 5000)
+2. **WebSocket** send absolute joint positions to a web-app listening at default port 5080
 
 Alternatively data can be read and played back from a .bvh file (see [dev/loader.js](dev/loader.js)) or joints can be animated in code (see [dev/sim.js](dev/sim.js)).
-
 
 ## Installation
 
@@ -29,7 +27,7 @@ Alternatively data can be read and played back from a .bvh file (see [dev/loader
 
 To stream data from Axis Neuron use `yarn run stream`
 
-- open Axis Neuron 
+- open Axis Neuron
 - open a .raw mocap file or connect your sensor suit
 - after the file is loaded, use the play-buttons inside the _Control editing_ pane to start the playback, you can increase the playback speed on the right and set the playback to loop (see loop-icon)
 - under _Preferences → Output format_ set _Frequency reducing_ to a value below 1 and make sure _Rotation_ is set to _YXZ_
@@ -48,19 +46,17 @@ external/
 ├── storage/
 ```
 
-### Simulation 
+### Simulation
 
 To stream data from code use `yarn run sim`. This will call script [dev/sim.js](dev/sim.js) which animates one leg and one arm swinging back and forth, left and right.
 
-
 ## Ports
 
-- __7002__ Axis Neuron 
-- __5000__ OSC
-- __5080__ HTTP and WebSocket, when axis-streamer is running, open a browser window and point at http://localhost:5080
+- **7002** Axis Neuron
+- **5000** OSC
+- **5080** HTTP and WebSocket, when axis-streamer is running, open a browser window and point at http://localhost:5080
 
-
-## Examples 
+## Examples
 
 There are 3 examples inside the examples folder for
 
@@ -68,12 +64,8 @@ There are 3 examples inside the examples folder for
 - Processing over UDP and OSC
 - p5js over WebSocket
 
-
 ## Status
 
 - This project is currently under development
-- The purpose of this project is to take data streamed from Axis Neuron or from a .bvh file, translated angular position data to absolute position coordinates and streamed these out over WebSocket or OSC
-
-
-
-
+- The purpose of this project is to take data streamed from Axis Neuron or from a .bvh file, translate angular position data to absolute position coordinates and streame these out over WebSocket and OSC
+- Able to send and receive multiple streams

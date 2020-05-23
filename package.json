@@ -2,17 +2,22 @@
   "name": "axis-streamer",
   "version": "0.1.0",
   "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and WebSocket.",
+  "author": {
+    "name": "Andreas Schlegel",
+    "url": "http://www.sojamo.de"
+  },
   "private": true,
-  "main": "index.js",
+  "main": "src/app.js",
+  "bin": {
+    "axis-streamer": "bin/axis-streamer"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "stream": "npx babel-node ./dev/streamer.js",
     "load": "npx babel-node ./dev/loader.js",
-    "sim": "npx babel-node ./dev/sim.js"
-  },
-  "author": {
-    "name":"Andreas Schlegel",
-    "url": "http://www.sojamo.de"
+    "sim": "npx babel-node ./dev/sim.js",
+    "auto": "npx babel-node ./dev/auto.js",
+    "split": "npx babel-node ./dev/split.js"
   },
   "repository": {
     "type": "git",
@@ -20,18 +25,21 @@
   },
   "license": "ISC",
   "dependencies": {
+    "esm": "^3.2.25",
     "express": "^4.17.1",
     "filereader": "^0.10.3",
     "osc": "2.4.1",
-    "socketio": "^1.0.0",
+    "socket.io": "^2.3.0",
     "ws": "^7.2.5"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",
     "@babel/node": "^7.8.7",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-private-methods": "^7.8.3",
     "@babel/preset-env": "^7.9.5",
     "@babel/preset-react": "^7.9.4",
-    "babel-loader": "^8.1.0"
+    "babel-loader": "^8.1.0",
+    "prettier": "2.0.5"
   }
 }
