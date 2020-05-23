@@ -10,12 +10,12 @@
  *
  */
 
-import BvhBody from './BvhBody';
+import BvhConstants from './BvhConstants';
 
 export default class BvhStream {
   constructor(options = {}) {
     this.initSocket(options.port || 7002);
-    this.#target = options.target || [];
+    this.#source = options.source || [];
     this.#collect = '';
   }
 
@@ -77,17 +77,17 @@ export default class BvhStream {
         v.push(data.readFloatLE(i + 12)); // y-rot
         v.push(data.readFloatLE(i + 16)); // x-rot
         v.push(data.readFloatLE(i + 20)); // z-rot
-        channels[BvhBody.skeleton[index]] = v;
+        channels[BvhConstants.skeleton[index]] = v;
         index++;
       }
 
-      /* target is an array of BvhBody(s) */
-      this.#target.forEach((el) => {
+      /* source is an array of BvhBody(s) */
+      this.#source.forEach((el) => {
         el.processIncomingData({ frameIndex, channels });
       });
     }
   }
 
   #collect;
-  #target;
+  #source;
 }
