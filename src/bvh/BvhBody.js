@@ -1,19 +1,27 @@
 import BvhMatrix from './BvhMatrix';
+import BvhConstants from './BvhConstants';
 
 export default class BvhBody {
   constructor(theId) {
     this.#id = theId;
+    this.#ip = '127.0.0.1';
+    this.#owner = BvhBody.owner.SELF;
+
+    /** joints */
+    this.#root = undefined;
+    this.joints = [];
+    this.#center = false;
+    this.#flat = [];
+
+    /** frames */
     this.#nbFrames = 0;
     this.#frameTime = 0;
     this.#currentFrame = 0;
-    this.motionLoop = false;
-    this.#root = undefined;
-    this.joints = [];
     this.frames = [];
-    this.#center = false;
-    this.#flat = [];
-    this.#lines = [];
-    this.#owner = BvhBody.owner.SELF;
+
+    /** playback */
+    this.motionLoop = false;
+    this.#play = false;
   }
 
   /**
@@ -22,8 +30,51 @@ export default class BvhBody {
    * the skeleton data.
    */
   update() {
-    this.updateJoint(this.root);
-    this.flatten();
+    if (this.#owner === BvhBody.owner.SELF) {
+      if (this.#play) {
+        this.#updateFrames();
+      }
+      this.#updateJoint(this.root);
+      this.flatten();
+    } else {
+    }
+  }
+
+  #updateFrames() {
+    const data = this.getFrame(this.currentFrame);
+    const dataLength = data.length;
+    /**
+     * TODO
+     * dataLength must be 354
+     * currently there is no .bvh format check
+     * we expect 59 joints (see BvhConstants.skeleton)
+     * with 6 float values per channel where
+     * xyz-position followed by yxz-rotation
+     */
+
+    if (dataLength == 354) {
+      const channels = {};
+      let index = 0;
+      for (let i = 0; i < dataLength; i += 6) {
+        const v = [];
+        v.push(data[i + 0]); // x-pos
+        v.push(data[i + 1]); // y-pos
+        v.push(data[i + 2]); // z-pos
+        v.push(data[i + 3]); // y-rot
+        v.push(data[i + 4]); // x-rot
+        v.push(data[i + 5]); // z-rot
+        channels[BvhConstants.skeleton[index]] = v;
+        index++;
+      }
+
+      this.processIncomingData({ frameIndex: this.currentFrame, channels });
+    } else {
+      console.warn(
+        'BvhBody.play(), wrong data-count: should be 354 but is',
+        dataLength,
+        'cant play frame',
+      );
+    }
   }
 
   /**
@@ -48,46 +99,6 @@ export default class BvhBody {
       this.flattenFor(el, theList);
     });
     return theList;
-  }
-  /**
-   * play
-   *
-   */
-  play() {
-    const data = this.getFrame(this.currentFrame);
-    const dataLength = data.length;
-    /**
-     * TODO
-     * dataLength must be 354
-     * currently there is no .bvh format check
-     * we expect 59 joints (see BvhBody.skeleton)
-     * with 6 float values per channel where
-     * xyz-position followed by yxz-rotation
-     */
-
-    if (dataLength == 354) {
-      const channels = {};
-      let index = 0;
-      for (let i = 0; i < dataLength; i += 6) {
-        const v = [];
-        v.push(data[i + 0]); // x-pos
-        v.push(data[i + 1]); // y-pos
-        v.push(data[i + 2]); // z-pos
-        v.push(data[i + 3]); // y-rot
-        v.push(data[i + 4]); // x-rot
-        v.push(data[i + 5]); // z-rot
-        channels[BvhBody.skeleton[index]] = v;
-        index++;
-      }
-
-      this.processIncomingData({ frameIndex: this.currentFrame, channels });
-    } else {
-      console.warn(
-        'BvhBody.play(), wrong data-count: should be 354 but is',
-        dataLength,
-        'cant play frame',
-      );
-    }
   }
 
   /**
@@ -124,10 +135,18 @@ export default class BvhBody {
    *
    * @param {*} theJoint
    */
-  updateJoint(theJoint) {
+  #updateJoint(theJoint) {
     let m = new BvhMatrix();
     m.translate(theJoint.xPosition, theJoint.yPosition, theJoint.zPosition);
-    m.translate(theJoint.xOffset, theJoint.yOffset, theJoint.zOffset);
+
+    /** TODO
+     * when translating by offset, the "grouding" of the
+     * skeleton is off, without applying offset information, it
+     * is fine. When streaming from Axis Neuron and loading
+     * from .bvh the skeleton structure is accurate and congruent.
+     * */
+
+    // m.translate(theJoint.xOffset, theJoint.yOffset, theJoint.zOffset);
 
     /**
      * important:
@@ -157,12 +176,39 @@ export default class BvhBody {
     theJoint.positionAbsolute = BvhBody.invertY(theJoint.positionAbsolute);
 
     if (theJoint.children.length > 0) {
-      theJoint.children.forEach((el) => this.updateJoint(el));
+      theJoint.children.forEach((el) => this.#updateJoint(el));
     } else {
       m.translate(theJoint.xEndOffset, theJoint.yEndOffset, theJoint.zEndOffset);
       theJoint.endPositionAbsolute = m.multFast();
       theJoint.endPositionAbsolute = BvhBody.invertY(theJoint.endPositionAbsolute);
     }
+  }
+
+  /**
+   * play
+   *
+   */
+  play() {
+    this.#play = true;
+  }
+
+  stop() {
+    this.first();
+    this.#play = false;
+  }
+
+  pause() {
+    // TODO
+  }
+
+  jumpTo(theFrame) {
+    // TODO
+    this.currentFrame = theFrame;
+    this.#updateFrames();
+  }
+
+  setSpeed() {
+    // TODO
   }
 
   /* getter */
@@ -177,6 +223,10 @@ export default class BvhBody {
 
   get flat() {
     return this.#flat;
+  }
+
+  get ip() {
+    return this.#ip;
   }
 
   get nbFrames() {
@@ -226,8 +276,8 @@ export default class BvhBody {
     this.#flat = theValue;
   }
 
-  set lines(theArray) {
-    this.#lines = theArray;
+  set ip(theIp) {
+    this.#ip = theIp;
   }
 
   set root(theJoint) {
@@ -254,123 +304,14 @@ export default class BvhBody {
   #flat;
   #frameTime;
   #id;
-  #lines;
+  #ip;
   #nbFrames;
   #owner;
+  #play;
   #root;
 
   static owner = {
     SELF: 0,
     OTHER: 1,
   };
-
-  static defaultSkeleton = [
-    'Hips',
-    'RightUpLeg',
-    'RightLeg',
-    'RightFoot',
-    'LeftUpLeg',
-    'LeftLeg',
-    'LeftFoot',
-    'RightShoulder',
-    'RightArm',
-    'RightForeArm',
-    'RightHand',
-    'LeftShoulder',
-    'LeftArm',
-    'LeftForeArm',
-    'LeftHand',
-    'Head',
-    'Neck',
-    'Spine3',
-    'Spine2',
-    'Spine1',
-    'Spine',
-  ];
-
-  static skeleton = [
-    'Hips',
-    'RightUpLeg',
-    'RightLeg',
-    'RightFoot',
-    'LeftUpLeg',
-    'LeftLeg',
-    'LeftFoot',
-    'Spine',
-    'Spine1',
-    'Spine2',
-    'Spine3',
-    'Neck',
-    'Head',
-    'RightShoulder',
-    'RightArm',
-    'RightForeArm',
-    'RightHand',
-    'RightHandThumb1',
-    'RightHandThumb2',
-    'RightHandThumb3',
-    'RightInHandIndex',
-    'RightHandIndex1',
-    'RightHandIndex2',
-    'RightHandIndex3',
-    'RightInHandMiddle',
-    'RightHandMiddle1',
-    'RightHandMiddle2',
-    'RightHandMiddle3',
-    'RightInHandRing',
-    'RightHandRing1',
-    'RightHandRing2',
-    'RightHandRing3',
-    'RightInHandPinky',
-    'RightHandPinky1',
-    'RightHandPinky2',
-    'RightHandPinky3',
-    'LeftShoulder',
-    'LeftArm',
-    'LeftForeArm',
-    'LeftHand',
-    'LeftHandThumb1',
-    'LeftHandThumb2',
-    'LeftHandThumb3',
-    'LeftInHandIndex',
-    'LeftHandIndex1',
-    'LeftHandIndex2',
-    'LeftHandIndex3',
-    'LeftInHandMiddle',
-    'LeftHandMiddle1',
-    'LeftHandMiddle2',
-    'LeftHandMiddle3',
-    'LeftInHandRing',
-    'LeftHandRing1',
-    'LeftHandRing2',
-    'LeftHandRing3',
-    'LeftInHandPinky',
-    'LeftHandPinky1',
-    'LeftHandPinky2',
-    'LeftHandPinky3',
-  ];
-
-  static jointSequence = [
-    'Hips',
-    'RightUpLeg',
-    'RightLeg',
-    'RightFoot',
-    'LeftUpLeg',
-    'LeftLeg',
-    'LeftFoot',
-    'RightShoulder',
-    'RightArm',
-    'RightForeArm',
-    'RightHand',
-    'LeftShoulder',
-    'LeftArm',
-    'LeftForeArm',
-    'LeftHand',
-    'Head',
-    'Neck',
-    'Spine3',
-    'Spine2',
-    'Spine1',
-    'Spine',
-  ];
 }
