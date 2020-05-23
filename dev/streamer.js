@@ -5,18 +5,21 @@ import Server from '../src/Server';
 
 let broadcastFor;
 let web;
-const entities = [];
+const source = [];
 const destinations = [];
 
-async function init() {
-  const parser = new BvhParser();
-  entities.push(await parser.readFile({ file: './assets/test.bvh', id: 1 }));
+function init() {
+  (async () => {
+    return (await BvhParser).readFile();
+  })().then((body) => {
+    source.push(body);
+  });
 
-  const stream = new BvhStream({ target: entities });
+  const stream = new BvhStream({ source });
 
   /* first, initialise our broadcaster */
-  web = new Server();
-  broadcastFor = new Broadcast();
+  web = new Server({ source });
+  broadcastFor = new Broadcast({ source });
   broadcastFor.osc = {};
 
   destinations.push({ address: '127.0.0.1', port: 5001 });
@@ -36,16 +39,14 @@ async function init() {
   setInterval(broadcast, 100);
 }
 
-(async () => {
-  init();
-})();
+init();
 
 function update() {
-  entities.forEach((body) => body.update());
+  source.forEach((body) => body.update());
 }
 
 function broadcast() {
-  web.xyz({ source: entities });
-  broadcastFor.osc.xyz({ source: entities, dest: destinations });
+  web.xyz();
+  broadcastFor.osc.xyz({ dest: destinations });
   // broadcastFor.osc.xyz({ source: body, range: ['Head', 'LeftHand', 'RightHand', 'Hips'] });
 }

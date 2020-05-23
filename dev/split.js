@@ -4,22 +4,22 @@ import Server from '../src/Server';
 
 let broadcastFor;
 let web;
-let parser;
-const entities = [];
+const source = [];
 const destinations = [];
 
 let frameCount = 0;
 
-async function init() {
-  parser = new BvhParser();
-  const b0 = await parser.readFile();
-
-  entities.push(b0);
+function init() {
+  (async () => {
+    return (await BvhParser).readFile();
+  })().then((body) => {
+    source.push(body);
+  });
 
   /* first, initialise our broadcaster */
-  web = new Server();
-  broadcastFor = new Broadcast();
-  broadcastFor.osc = { source: entities };
+  web = new Server({ source });
+  broadcastFor = new Broadcast({ source });
+  broadcastFor.osc = {};
 
   destinations.push({ address: '127.0.0.1', port: 5001 });
 
@@ -38,9 +38,7 @@ async function init() {
   setInterval(broadcast, 100);
 }
 
-(async () => {
-  init();
-})();
+init();
 
 function update() {
   frameCount++;
@@ -48,7 +46,7 @@ function update() {
 }
 
 function animate() {
-  entities.forEach((body) => {
+  source.forEach((body, i) => {
     body.update();
 
     /* the naming convention for keys follows the
@@ -63,6 +61,8 @@ function animate() {
      */
 
     /** TODO use a function instead of making changes to array flat */
+    body.flat['Hips'].xPosition = Math.sin(frameCount * 0.01 * i) * 200;
+
     body.flat['LeftUpLeg'].zRotation = Math.sin(frameCount * 0.01) * 20;
     body.flat['LeftUpLeg'].xRotation = Math.cos(frameCount * 0.1) * 40;
 
@@ -75,11 +75,6 @@ function animate() {
 }
 
 function broadcast() {
-  web.xyz({ source: entities });
-  broadcastFor.osc.xyz({
-    source: entities,
-    dest: destinations,
-    split: true,
-    range: ['RightForeArm', 'RightHand'],
-  });
+  web.xyz();
+  broadcastFor.osc.xyz({ dest: destinations, split: true, range: ['RightForeArm', 'RightHand'] });
 }
