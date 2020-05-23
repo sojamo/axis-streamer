@@ -4,40 +4,30 @@
  * https://www.npmjs.com/package/osc
  *
  */
+
 import BvhBody from './bvh/BvhBody';
 import BvhParser from './bvh/BvhParser';
+import BvhConstants from './bvh/BvhConstants';
 import * as osc from 'osc';
-import * as ws from 'ws';
 
 export default class Broadcast {
   #osc;
-  #ws;
+  #source;
 
-  constructor() {}
-
-  set osc(theOptions) {
-    this.#osc = new OSC(theOptions);
-    console.log(
-      `### Setting default OSC remote to\n### ${theOptions.remoteAddress}:${theOptions.remotePort}\n`,
-    );
+  constructor(options) {
+    this.#source = options.source || [];
   }
 
-  set ws(theOptions) {
-    this.#ws = new WebSocket(theOptions);
+  set osc(options) {
+    options.source = options.source || this.#source;
+    this.#osc = new OSC(options);
   }
 
   get osc() {
     if (this.#osc === undefined) {
-      this.#osc = new OSC({});
+      this.#osc = new OSC({ source: this.#source });
     }
     return this.#osc;
-  }
-
-  get ws() {
-    if (this._ws === undefined) {
-      this._ws = new WebSocket({});
-    }
-    return this.#ws;
   }
 
   static addressSpace = {
@@ -74,19 +64,6 @@ export default class Broadcast {
 }
 
 /**
- * WebSocket
- *
- * TODO
- *
- * */
-
-class WebSocket {
-  // start from here
-  // https://floatbug.com/transmitting-osc-data-via-websocket/
-  constructor(options) {}
-}
-
-/**
  * OSC
  *
  * implements https://github.com/colinbdclark/osc.js
@@ -104,16 +81,20 @@ class OSC {
     this.#localAddress = options.localAddress || '0.0.0.0';
     this.#localPort = options.localPort || 5000;
     this.#route = options.route || ((m) => {});
+    this.#source = options.source || []; /* ref to array that stores BvhBody(s) in main script */
+    (async () => {
+      return BvhParser.build();
+    })().then((parser) => this.#init(parser));
+  }
 
+  #init(parser) {
     const _self = this;
-    console.log(options.source);
-    const entities = options.source || [];
 
+    /** start OSC over UDP */
     this.#udpPort = new osc.UDPPort({
       localAddress: this.#localAddress,
       localPort: this.#localPort,
     });
-
     this.#udpPort.on('ready', () => {
       let ipAddresses = this.getIPAddresses();
       const out = [];
@@ -123,7 +104,10 @@ class OSC {
       console.table(out);
     });
 
-    this.#udpPort.on('message', (m) => {
+    /** when a message is received */
+    this.#udpPort.on('message', (m, time, rinfo) => {
+      /** check if we are dealing with the right address space
+       * address pattern must begin with /pn/ */
       if (m.address.startsWith('/pn/') === false) {
         return;
       }
@@ -137,14 +121,25 @@ class OSC {
       // _self.#route(m);
 
       /* extract id from address pattern */
-      const id = m.address.match(/\/(\d+)/)[1];
-      console.log('got message from', id, 'total number of registered bodies:', entities.length);
+      const regex0 = /\/(\d+)/;
+      const r0 = m.address.match(regex0);
+      const id = parseInt(r0[1]);
+
+      /** parse address pattern, we are looking for the part
+       * of the address after the id */
+      var regex1 = new RegExp(r0[0] + '(.+)');
+      const r1 = regex1.exec(m.address);
+      const addressPattern = r1[1];
+
+      /** get the remote IP address and assign to BvhBody */
+      const remoteAddress = rinfo.address;
+      const n = this.#source.length;
+      // console.log(`got message from id ${id} @ ${remoteAddress} registered bodies: ${n}`);
 
       let body;
-      return;
 
-      entities.some((el) => {
-        /* check if a body matches the id received */
+      /* check if a body matches the id received */
+      this.#source.some((el) => {
         const isMatch = el.id === id;
         if (isMatch) {
           body = el;
@@ -152,15 +147,17 @@ class OSC {
         return isMatch;
       });
 
+      /** if we received an unknown body-id, we create
+       * a new body-entity */
       if (body === undefined) {
-        // needs await
-        body = new BvhParser().readFile();
-        // body = new BvhBody(id);
+        body = parser.fromTemplate({ id });
         body.owner = BvhBody.owner.OTHER;
-        entities.push(body);
+        body.ip = remoteAddress;
+        this.#source.push(body);
       }
 
-      // console.log('Amount of BvhBody registered:', group.length);
+      /** now forward message details for parsing */
+      _self.parseIncomingDataFor(body, addressPattern, m.args);
     });
 
     this.#udpPort.on('error', (err) => {
@@ -187,6 +184,28 @@ class OSC {
     });
 
     this.#udpPort.open();
+  }
+
+  parseIncomingDataFor(theBody, theAddressPattern, theArgs) {
+    if (theAddressPattern.endsWith(Broadcast.addressSpace.allPositionAbsolute)) {
+      // console.log('parsing', theAddressPattern, 'for body-id', theBody.id);
+
+      for (let i = 0, n = 0; i < theArgs.length; i += 3, n += 1) {
+        /**  parse and assign absolute positions to body joints,
+         *  this will not calcualte relative position nor rotation,
+         * but will only update absolute position.
+         */
+
+        const v = { x: theArgs[i], y: theArgs[i + 1], z: theArgs[i + 2] };
+        const jointName = BvhConstants.jointSequence[n];
+
+        if (jointName.endsWith('End') === false) {
+          theBody.flat[jointName].positionAbsolute = v;
+        } else {
+          // TODO
+        }
+      }
+    }
   }
 
   sendRaw(address, args, dest = []) {
@@ -224,12 +243,11 @@ class OSC {
         : options.isUVW
         ? 'allAbsolute'
         : 'allPositionAbsolute';
-    const range = options.range || BvhBody.defaultSkeleton;
-    const source = options.source !== undefined ? options.source : [];
+    const range = options.range || BvhConstants.defaultSkeleton;
     const isUVW = options.isUVW || false;
     const isSplit = options.split || false;
 
-    source.forEach((el0) => {
+    this.#source.forEach((el0) => {
       const id = el0.id;
       const args = [];
       const address = this.getPrefix(id) + Broadcast.addressSpace[path];
@@ -275,7 +293,6 @@ class OSC {
             args.push({ type: 'f', value: x });
             args.push({ type: 'f', value: y });
             args.push({ type: 'f', value: z });
-
             if (isSplit === true) {
               const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
                 Broadcast.addressSpace.positionAbsolute
@@ -313,10 +330,10 @@ class OSC {
         const port = destination.port || -1;
         if (remote !== undefined && port !== -1) {
           this.#udpPort.send({ address, args }, remote, port);
+          split.forEach((message) => {
+            this.#udpPort.send(message, remote, port);
+          });
         }
-        split.forEach((message) => {
-          this.#udpPort.send(message, remote, port);
-        });
       });
     });
   }
@@ -339,7 +356,7 @@ class OSC {
   xyzuvw(options = {}) {
     this.xyz({
       source: options.source || {},
-      range: options.range || Broadcast.defaultSkeleton,
+      range: options.range || BvhConstants.defaultSkeleton,
       isUVW: true,
       dest: options.dest || [],
     });
@@ -365,5 +382,6 @@ class OSC {
   #localAddress;
   #localPort;
   #route;
+  #source;
   #udpPort;
 }
