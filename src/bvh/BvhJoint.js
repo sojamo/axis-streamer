@@ -1,315 +1,310 @@
-
 export default class BvhJoint {
+  constructor(options = {}) {
+    this.#id = options.id || 0;
+    this.#name = options.name || '?';
+    this.#parent = options.parent || undefined;
+    this.#children = [];
 
-	constructor(options = {}) {
-		this.#id = options.id || 0;
-		this.#name = options.name || "?";
-		this.#parent = options.parent || undefined;
-		this.#children = [];
+    this.#positionAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#rotationAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#endPositionAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#endRotationAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
 
-		this.#positionAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
-		this.#rotationAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
-		this.#endPositionAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
-		this.#endRotationAbsolute = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#position = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#rotation = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#offset = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#endOffset = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
 
-		this.#position = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
-		this.#rotation = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
-		this.#offset = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
-		this.#endOffset = { x: 0, y: 0, z: 0, xyz: [0, 0, 0] };
+    this.#channels = [];
+    this.#nbChannels = -1;
+    this.#globalMatrix = undefined;
+  }
 
-		this.#channels = [];
-		this.#nbChannels = -1;
-		this.#globalMatrix = undefined;
+  add(theElement) {
+    this.#children.push(theElement);
+    theElement.parent = this;
+  }
 
-	}
+  /* getter */
 
-	add(theElement) {
-		this.#children.push(theElement);
-		theElement.parent = this;
-	}
+  get rotationAbsolute() {
+    return this.#rotationAbsolute;
+  }
 
-	/* getter */
+  get positionAbsolute() {
+    return this.#positionAbsolute;
+  }
 
-	get rotationAbsolute() {
-		return this.#rotationAbsolute;
-	}
+  get endPositionAbsolute() {
+    return this.#endPositionAbsolute;
+  }
 
-	get positionAbsolute() {
-		return this.#positionAbsolute;
-	}
+  get position() {
+    return this.#position;
+  }
 
-	get endPositionAbsolute() {
-		return this.#endPositionAbsolute;
-	}
+  get offset() {
+    return this.#offset;
+  }
 
+  get rotation() {
+    return this.#rotation;
+  }
 
-	get position() {
-		return this.#position;
-	}
+  get matrix() {
+    return this.#globalMatrix;
+  }
 
-	get offset() {
-		return this.#offset;
-	}
+  get xPosition() {
+    return this.#position.x;
+  }
 
-	get rotation() {
-		return this.#rotation;
-	}
+  get yPosition() {
+    return this.#position.y;
+  }
 
-	get matrix() {
-		return this.#globalMatrix;
-	}
+  get zPosition() {
+    return this.#position.z;
+  }
 
-	get xPosition() {
-		return this.#position.x;
-	}
+  get xOffset() {
+    return this.#offset.x;
+  }
 
-	get yPosition() {
-		return this.#position.y;
-	}
+  get yOffset() {
+    return this.#offset.y;
+  }
 
-	get zPosition() {
-		return this.#position.z;
-	}
+  get zOffset() {
+    return this.#offset.z;
+  }
 
-	get xOffset() {
-		return this.#offset.x;
-	}
+  get xEndOffset() {
+    return this.#endOffset.x;
+  }
 
-	get yOffset() {
-		return this.#offset.y;
-	}
+  get yEndOffset() {
+    return this.#endOffset.y;
+  }
 
-	get zOffset() {
-		return this.#offset.z;
-	}
+  get zEndOffset() {
+    return this.#endOffset.z;
+  }
 
-	get xEndOffset() {
-		return this.#endOffset.x;
-	}
+  get xRotation() {
+    return this.#rotation.x;
+  }
 
-	get yEndOffset() {
-		return this.#endOffset.y;
-	}
+  get yRotation() {
+    return this.#rotation.y;
+  }
 
-	get zEndOffset() {
-		return this.#endOffset.z;
-	}
+  get zRotation() {
+    return this.#rotation.z;
+  }
 
-	get xRotation() {
-		return this.#rotation.x;
-	}
+  get name() {
+    return this.#name;
+  }
 
-	get yRotation() {
-		return this.#rotation.y;
-	}
+  get id() {
+    return this.#id;
+  }
 
-	get zRotation() {
-		return this.#rotation.z;
-	}
+  get children() {
+    return this.#children;
+  }
 
-	get name() {
-		return this.#name;
-	}
+  get parent() {
+    return this.#parent;
+  }
 
-	get id() {
-		return this.#id;
-	}
+  get hasEndPoint() {
+    return !this.#children.length;
+  }
 
-	get children() {
-		return this.#children;
-	}
+  /* setter */
 
-	get parent() {
-		return this.#parent;
-	}
+  /**
+   * @param {Number} theName
+   */
+  set id(theId) {
+    this.#id = theId;
+  }
 
-	get hasEndPoint() {
-		return !this.#children.length;
-	}
+  /**
+   * @param {string} theName
+   */
+  set name(theName) {
+    this.#name = theName;
+  }
 
-	/* setter */
+  /**
+   * @param {number} theValue
+   */
+  set xRotation(theValue) {
+    this.#rotation.x = theValue;
+    this._updateFor(this.#rotation);
+  }
 
+  /**
+   * @param {number} theValue
+   */
+  set yRotation(theValue) {
+    this.#rotation.y = theValue;
+    this._updateFor(this.#rotation);
+  }
 
-	/**
-	 * @param {Number} theName
-	 */
-	set id(theId) {
-		this.#id = theId;
-	}
+  /**
+   * @param {number} theValue
+   */
+  set zRotation(theValue) {
+    this.#rotation.z = theValue;
+    this._updateFor(this.#rotation);
+  }
 
-	/**
-	 * @param {string} theName
-	 */
-	set name(theName) {
-		this.#name = theName;
-	}
+  /**
+   * @param {number} theValue
+   */
+  set xPosition(theValue) {
+    this.#position.x = theValue;
+    this._updateFor(this.#position);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set xRotation(theValue) {
-		this.#rotation.x = theValue;
-		this._updateFor(this.#rotation);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set yPosition(theValue) {
+    this.#position.y = theValue;
+    this._updateFor(this.#position);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set yRotation(theValue) {
-		this.#rotation.y = theValue;
-		this._updateFor(this.#rotation);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set zPosition(theValue) {
+    this.#position.z = theValue;
+    this._updateFor(this.#position);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set zRotation(theValue) {
-		this.#rotation.z = theValue;
-		this._updateFor(this.#rotation);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set xOffset(theValue) {
+    this.#offset.x = theValue;
+    this._updateFor(this.#offset);
+  }
 
-	/**
- 	 * @param {number} theValue
- 	 */
-	set xPosition(theValue) {
-		this.#position.x = theValue;
-		this._updateFor(this.#position);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set yOffset(theValue) {
+    this.#offset.y = theValue;
+    this._updateFor(this.#offset);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set yPosition(theValue) {
-		this.#position.y = theValue;
-		this._updateFor(this.#position);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set zOffset(theValue) {
+    this.#offset.z = theValue;
+    this._updateFor(this.#offset);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set zPosition(theValue) {
-		this.#position.z = theValue;
-		this._updateFor(this.#position);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set xEndOffset(theValue) {
+    this.#endOffset.x = theValue;
+    this._updateFor(this.#endOffset);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set xOffset(theValue) {
-		this.#offset.x = theValue;
-		this._updateFor(this.#offset);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set yEndOffset(theValue) {
+    this.#endOffset.y = theValue;
+    this._updateFor(this.#endOffset);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set yOffset(theValue) {
-		this.#offset.y = theValue;
-		this._updateFor(this.#offset);
-	}
+  /**
+   * @param {number} theValue
+   */
+  set zEndOffset(theValue) {
+    this.#endOffset.z = theValue;
+    this._updateFor(this.#endOffset);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set zOffset(theValue) {
-		this.#offset.z = theValue;
-		this._updateFor(this.#offset);
-	}
+  set axisNeuronPositionRotation(theData) {
+    this.#position.x = theData[0];
+    this.#position.y = theData[1];
+    this.#position.z = theData[2];
 
-	/**
-	 * @param {number} theValue
-	 */
-	set xEndOffset(theValue) {
-		this.#endOffset.x = theValue;
-		this._updateFor(this.#endOffset);
-	}
+    this.#rotation.x = theData[4];
+    this.#rotation.y = theData[3];
+    this.#rotation.z = theData[5];
 
-	/**
-	 * @param {number} theValue
-	 */
-	set yEndOffset(theValue) {
-		this.#endOffset.y = theValue;
-		this._updateFor(this.#endOffset);
-	}
+    this._updateFor(this.#position);
+    this._updateFor(this.#rotation);
+  }
 
-	/**
-	 * @param {number} theValue
-	 */
-	set zEndOffset(theValue) {
-		this.#endOffset.z = theValue;
-		this._updateFor(this.#endOffset);
-	}
+  set positionAbsolute(theVec) {
+    this.#positionAbsolute.x = theVec.x;
+    this.#positionAbsolute.y = theVec.y;
+    this.#positionAbsolute.z = theVec.z;
+    this._updateFor(this.#positionAbsolute);
+  }
 
-	set axisNeuronPositionRotation(theData) {
-		this.#position.x = theData[0];
-		this.#position.y = theData[1];
-		this.#position.z = theData[2];
+  set endPositionAbsolute(theVec) {
+    this.#endPositionAbsolute.x = theVec.x;
+    this.#endPositionAbsolute.y = theVec.y;
+    this.#endPositionAbsolute.z = theVec.z;
+    this._updateFor(this.#endPositionAbsolute);
+  }
 
-		this.#rotation.x = theData[4];
-		this.#rotation.y = theData[3];
-		this.#rotation.z = theData[5];
+  set rotationAbsolute(theVec) {
+    this.#rotationAbsolute.x = theVec.x;
+    this.#rotationAbsolute.y = theVec.y;
+    this.#rotationAbsolute.z = theVec.z;
+    this._updateFor(this.#rotationAbsolute);
+  }
 
-		this._updateFor(this.#position);
-		this._updateFor(this.#rotation);
-	}
+  /**
+   * @param {any[]} theChannels
+   */
+  set channels(theChannels) {
+    this.#channels = theChannels;
+  }
 
-	set positionAbsolute(theVec) {
-		this.#positionAbsolute.x = theVec.x;
-		this.#positionAbsolute.y = theVec.y;
-		this.#positionAbsolute.z = theVec.z;
-		this._updateFor(this.#positionAbsolute);
-	}
+  set nbChannels(theNbChannels) {
+    this.#nbChannels = theNbChannels;
+  }
 
-	set endPositionAbsolute(theVec) {
-		this.#endPositionAbsolute.x = theVec.x;
-		this.#endPositionAbsolute.y = theVec.y;
-		this.#endPositionAbsolute.z = theVec.z;
-		this._updateFor(this.#endPositionAbsolute);
-	}
+  set parent(theParent) {
+    this.#parent = theParent;
+  }
 
-	set rotationAbsolute(theVec) {
-		this.#rotationAbsolute.x = theVec.x;
-		this.#rotationAbsolute.y = theVec.y;
-		this.#rotationAbsolute.z = theVec.z;
-		this._updateFor(this.#rotationAbsolute);
-	}
+  set matrix(theMatrix) {
+    this.#globalMatrix = theMatrix;
+  }
 
-	/**
-	 * @param {any[]} theChannels
-	 */
-	set channels(theChannels) {
-		this.#channels = theChannels;
-	}
+  _updateFor(theMember) {
+    theMember['xyz'] = [theMember['x'], theMember['y'], theMember['z']];
+  }
 
-	set nbChannels(theNbChannels) {
-		this.#nbChannels = theNbChannels;
-	}
-
-	set parent(theParent) {
-		this.#parent = theParent;
-	}
-
-	set matrix(theMatrix) {
-		this.#globalMatrix = theMatrix;
-	}
-
-	_updateFor(theMember) {
-		theMember['xyz'] = [theMember['x'], theMember['y'], theMember['z']];
-	}
-
-	#id
-	#name
-	#parent
-	#children
-	#positionAbsolute
-	#rotationAbsolute
-	#endPositionAbsolute
-	#endRotationAbsolute
-	#position
-	#rotation
-	#offset
-	#endOffset
-	#channels
-	#nbChannels
-	#globalMatrix
+  #id;
+  #name;
+  #parent;
+  #children;
+  #positionAbsolute;
+  #rotationAbsolute;
+  #endPositionAbsolute;
+  #endRotationAbsolute;
+  #position;
+  #rotation;
+  #offset;
+  #endOffset;
+  #channels;
+  #nbChannels;
+  #globalMatrix;
 }

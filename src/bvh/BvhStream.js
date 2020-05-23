@@ -1,41 +1,42 @@
 /**
  * BvhStream
- * 
- * Reads bvh data coming from Axis Neuron as bvh-binary 
+ *
+ * Reads bvh data coming from Axis Neuron as bvh-binary
  * format. For the Rotation setting under the Output Format,
  * BvhStream expects coordinates to be in YXZ order.
- * 
- * BvhStream by default listens for incoming UDP 
+ *
+ * BvhStream by default listens for incoming UDP
  * messages on port 7002.
- * 
+ *
  */
 
-import Broadcast from '../Broadcast'
+import BvhConstants from './BvhConstants';
 
 export default class BvhStream {
-
   constructor(options = {}) {
     this.initSocket(options.port || 7002);
-    this.#fn = options.target.processAxisNeuronData.bind(options.target);
-    this.#collect = "";
+    this.#source = options.source || [];
+    this.#collect = '';
   }
 
   initSocket(thePort) {
-    const dgram = require("dgram");
-    const client = dgram.createSocket("udp4");
+    const dgram = require('dgram');
+    const client = dgram.createSocket('udp4');
 
-    client.on("error", err => {
+    client.on('error', (err) => {
       console.log(`server error:\n${err.stack}`);
       client.close();
     });
 
-    client.on("message", (msg, rinfo) => {
+    client.on('message', (msg, rinfo) => {
       this.parseBuffer(msg);
     });
 
-    client.on("listening", () => {
+    client.on('listening', () => {
       const address = client.address();
-      console.log(`client listening ${address.address}:${address.port}`);
+      console.log(
+        `### Listening for \n### BVH stream from Axis Neuron\n### ${address.address}:${address.port}\n`,
+      );
     });
 
     client.bind(thePort);
@@ -58,7 +59,7 @@ export default class BvhStream {
       const withDisp = this.#collect.readInt8(8); // 01
       const withRef = this.#collect.readInt8(9); // 00
       const avatarIndex = this.#collect.readUInt32LE(10); // 00 00 00 00
-      const avatarName = this.#collect.subarray(14, 46).toString("ascii", 0, 32);
+      const avatarName = this.#collect.subarray(14, 46).toString('ascii', 0, 32);
       const frameIndex = this.#collect.readUInt32LE(46);
       const reserved = this.#collect.readUInt32LE(50);
       const reserved1 = this.#collect.readUInt32LE(54);
@@ -76,27 +77,17 @@ export default class BvhStream {
         v.push(data.readFloatLE(i + 12)); // y-rot
         v.push(data.readFloatLE(i + 16)); // x-rot
         v.push(data.readFloatLE(i + 20)); // z-rot
-        channels[Broadcast.bvhSkeleton[index]] = v;
+        channels[BvhConstants.skeleton[index]] = v;
         index++;
       }
 
-      /**
-       *  fn()
-       * a function to broadcast data received from axis neuron
-       * - frameIndex
-       * the frameIndex provided by the received data packet
-       * - channels
-       * each channel is packaged into its own sub-array, for
-       * convenience and option to extract per Broadcast.bvhSkeleton,
-       * see Broadcast.bvhSkeleton
-       */
-
-      this.#fn({ frameIndex, channels });
-
+      /* source is an array of BvhBody(s) */
+      this.#source.forEach((el) => {
+        el.processIncomingData({ frameIndex, channels });
+      });
     }
   }
 
-  #collect
-  #fn
+  #collect;
+  #source;
 }
-

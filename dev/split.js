@@ -11,10 +11,9 @@ let frameCount = 0;
 
 function init() {
   (async () => {
-    return await BvhParser.readFile();
+    return (await BvhParser).readFile();
   })().then((body) => {
     source.push(body);
-    body.jumpTo(0);
   });
 
   /* first, initialise our broadcaster */
@@ -63,6 +62,7 @@ function animate() {
 
     /** TODO use a function instead of making changes to array flat */
     body.flat['Hips'].xPosition = Math.sin(frameCount * 0.01 * i) * 200;
+
     body.flat['LeftUpLeg'].zRotation = Math.sin(frameCount * 0.01) * 20;
     body.flat['LeftUpLeg'].xRotation = Math.cos(frameCount * 0.1) * 40;
 
@@ -76,5 +76,5 @@ function animate() {
 
 function broadcast() {
   web.xyz();
-  broadcastFor.osc.xyz({ dest: destinations });
+  broadcastFor.osc.xyz({ dest: destinations, split: true, range: ['RightForeArm', 'RightHand'] });
 }
