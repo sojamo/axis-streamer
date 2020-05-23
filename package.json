@@ -1,6 +1,6 @@
 {
   "name": "axis-streamer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and WebSocket.",
   "private": true,
   "main": "index.js",
@@ -11,7 +11,7 @@
     "sim": "npx babel-node ./dev/sim.js"
   },
   "author": {
-    "name":"Andreas Schlegel",
+    "name": "Andreas Schlegel",
     "url": "http://www.sojamo.de"
   },
   "repository": {
