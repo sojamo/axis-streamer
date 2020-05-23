@@ -19,9 +19,49 @@ import * as fs from 'fs';
 import { promisify } from 'util';
 
 export default class BvhParser {
-  constructor() {}
+  #template;
 
-  async readFile(options = {}) {
+  static async build(options = {}) {
+    /** default template .bvh file */
+    const file = options.file || './assets/test.bvh';
+
+    /** async read file */
+    const pReadFile = promisify(fs.readFile);
+    const result = { template: '' };
+    await pReadFile(file, 'utf8').then((theResult) => {
+      result.template = theResult;
+    });
+    /** return a new parser with file-data read */
+    return new BvhParser(result);
+  }
+
+  constructor(options = {}) {
+    /**
+     * NOTE
+     * if new BvhParser was created from BvhParser.build(),
+     * template will be set to text read from .bvh file.
+     * In the future we will not have to read the
+     * template-file again, hence, we wont' run into
+     * run-time Promise conflict (@ OSC on message)
+     */
+    this.#template = options.template || '';
+  }
+
+  fromTemplate(options = {}) {
+    const id = options.id === undefined ? 1 : options.id;
+    const body = new BvhBody(id);
+    BvhParser.parse({
+      body,
+      read: this.#template.split(/[\r\n]+/g),
+      currentLine: 1,
+      currentJoint: undefined,
+      lines: [],
+    });
+    body.flatten();
+    return body;
+  }
+
+  static async readFile(options = {}) {
     const id = options.id === undefined ? 1 : options.id;
     // NOTE || value OR default (options.id || 1) will not
     // work if we can expect 0 as value.
@@ -29,38 +69,38 @@ export default class BvhParser {
     const file = options.file || './assets/test.bvh';
     const pReadFile = promisify(fs.readFile);
     const body = new BvhBody(id);
+
     await pReadFile(file, 'utf8').then((theResult) => {
-      this.parse({
+      BvhParser.parse({
         body,
         read: theResult.split(/[\r\n]+/g),
         currentLine: 1,
         currentJoint: undefined,
         lines: [],
       });
-
       body.flatten();
     });
     return body;
   }
 
-  parse(args) {
+  static parse(args) {
     args.lines = [];
     args.read.forEach((el, i) => {
       args.lines.push(new BvhLine(el));
     });
 
     // theBody.#currentLine = 1;
-    args.body.root = this.parseJoint(args);
+    args.body.root = BvhParser.parseJoint(args);
 
     if (args.body.center === true) {
       args.body.rootJoint.xOffset = 0;
       args.body.rootJoint.yOffset = 0;
       args.body.rootJoint.zOffset = 0;
     }
-    this.parseFrames(args);
+    BvhParser.parseFrames(args);
   }
 
-  parseJoint(args) {
+  static parseJoint(args) {
     let jointName = args.lines[args.currentLine].jointName; // 1
     let joint = new BvhJoint({
       joint: args.currentJoint,
@@ -88,7 +128,7 @@ export default class BvhParser {
 
       if (BvhLine.JOINT === lineType) {
         // JOINT or ROOT
-        let child = this.parseJoint(args); // generate new BvhJOINT
+        let child = BvhParser.parseJoint(args); // generate new BvhJOINT
         child.parent = joint;
         joint.children.push(child);
       } else if (BvhLine.END_SITE === lineType) {
@@ -109,7 +149,7 @@ export default class BvhParser {
     return joint;
   }
 
-  parseFrames(args) {
+  static parseFrames(args) {
     let currentLine = args.currentLine;
 
     for (; currentLine < args.lines.length; currentLine++) {
