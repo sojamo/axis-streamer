@@ -3,7 +3,7 @@ import Broadcast from '../src/Broadcast';
 import Server from '../src/Server';
 import path from 'path';
 
-let entities = [];
+let source = [];
 let web;
 let broadcastFor;
 let destinations = [];
@@ -11,8 +11,6 @@ let destinations = [];
 let frameIndex = 0;
 
 async function init() {
-  const parser = new BvhParser();
-
   /**
    * requires a .bvh file to be located inside a folder storage
    * inside a folder external which is located next to the
@@ -26,19 +24,22 @@ async function init() {
    */
 
   const file = path.join(__dirname, '../../external/storage/test-load.bvh');
-  const b1 = await parser.readFile({ file, id: 1 });
 
-  entities.push(b1);
-
-  console.log(`loading file\n${file}\n  ${entities.length} BvhBody(s)`);
-
-  entities.forEach((b) => {
-    console.log(`  id: ${b.id}\tframes: ${b.nbFrames}\tframeTime: ${b.frameTime}`);
+  (async () => {
+    return (await BvhParser).readFile({ file, id: 1 });
+  })().then((body) => {
+    source.push(body);
+    body.play();
+    console.log(`loading file\n${file}\n  ${source.length} BvhBody(s)`);
+    source.forEach((b) => {
+      const m = `  id: ${b.id}\tframes: ${b.nbFrames}\tframeTime: ${b.frameTime}`;
+      console.log(m);
+    });
   });
 
   /* initialise network components */
-  web = new Server();
-  broadcastFor = new Broadcast({ source: entities });
+  web = new Server({ source });
+  broadcastFor = new Broadcast({ source });
   broadcastFor.osc = {};
 
   destinations.push({ address: '127.0.0.1', port: 5001 });
@@ -60,25 +61,15 @@ async function init() {
 
 function update() {
   frameIndex += 4;
-  entities.forEach((body) => {
+  source.forEach((body) => {
     body.currentFrame = frameIndex % body.nbFrames;
-    body.play();
     body.update();
   });
 }
 
 function broadcast() {
-  web.xyz({
-    source: entities,
-  });
-
-  broadcastFor.osc.xyz({
-    source: entities,
-    dest: destinations,
-    split: true,
-  });
+  web.xyz();
+  broadcastFor.osc.xyz({ dest: destinations });
 }
 
-(async () => {
-  init();
-})();
+init();
