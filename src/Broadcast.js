@@ -207,6 +207,7 @@ class OSC {
       }
     } else {
       // TODO
+      // check address pattern, extract jointName, and assign to theBody.flat[jointName]
       console.log('received data for', theAddressPattern);
     }
   }

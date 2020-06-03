@@ -43,7 +43,6 @@ export default class Base {
   }
 
   broadcast() {
-    console.log(this.options);
     this.web.xyz();
     this.broadcastFor.osc.xyz({
       dest: this.destinations,
