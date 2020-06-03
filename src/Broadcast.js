@@ -243,7 +243,9 @@ class OSC {
         : options.isUVW
         ? 'allAbsolute'
         : 'allPositionAbsolute';
-    const range = options.range || BvhConstants.defaultSkeleton;
+    let range = options.range || BvhConstants.defaultSkeleton;
+    range = range.length === 0 ? BvhConstants.defaultSkeleton : range;
+
     const isUVW = options.isUVW || false;
     const isSplit = options.split || false;
 

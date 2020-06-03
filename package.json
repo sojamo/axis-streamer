@@ -8,6 +8,7 @@
   },
   "private": true,
   "main": "src/app.js",
+  "type": "module",
   "bin": {
     "axis-streamer": "bin/axis-streamer"
   },
@@ -17,7 +18,8 @@
     "load": "npx babel-node ./dev/loader.js",
     "sim": "npx babel-node ./dev/sim.js",
     "auto": "npx babel-node ./dev/auto.js",
-    "split": "npx babel-node ./dev/split.js"
+    "split": "npx babel-node ./dev/split.js",
+    "with": "npx babel-node ./app/args.js"
   },
   "repository": {
     "type": "git",
@@ -25,9 +27,11 @@
   },
   "license": "ISC",
   "dependencies": {
+    "arg": "^3.2.25",
     "esm": "^3.2.25",
     "express": "^4.17.1",
     "filereader": "^0.10.3",
+    "minimalist": "^1.0.0",
     "osc": "2.4.1",
     "socket.io": "^2.3.0",
     "ws": "^7.2.5"

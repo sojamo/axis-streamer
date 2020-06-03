@@ -1,0 +1,45 @@
+import Load from './load';
+import Stream from './stream';
+
+const fs = require('fs');
+const argv = require('minimist')(process.argv.slice(2));
+const options = {};
+const path = '../external/';
+
+Object.keys(argv).forEach((key) => {
+  const val = argv[key];
+  switch (key) {
+    case 'settings':
+      const f = val === true ? 'settings.json' : val;
+      options.settings = JSON.parse(fs.readFileSync(path + f, 'utf-8'));
+      break;
+    case 'app':
+      options.app = options.app || val;
+      break;
+    case 'record':
+      options.record = options.record || val;
+  }
+});
+
+// if (argv['app'] !== undefined) {
+//   switch (argv['app']) {
+//     case 'stream':
+//       new Stream(options);
+//       break;
+//     case 'load':
+//       new Load(options);
+//       break;
+//     case 'sim':
+//       new Sim(options);
+//       break;
+//     case 'split':
+//       new Split(options);
+//       break;
+//     default:
+//       new Load(options);
+//       break;
+//   }
+// } else {
+// new Load(options);
+new Stream(options);
+// }
