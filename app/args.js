@@ -21,25 +21,28 @@ Object.keys(argv).forEach((key) => {
   }
 });
 
-// if (argv['app'] !== undefined) {
-//   switch (argv['app']) {
-//     case 'stream':
-//       new Stream(options);
-//       break;
-//     case 'load':
-//       new Load(options);
-//       break;
-//     case 'sim':
-//       new Sim(options);
-//       break;
-//     case 'split':
-//       new Split(options);
-//       break;
-//     default:
-//       new Load(options);
-//       break;
-//   }
-// } else {
-// new Load(options);
-new Stream(options);
-// }
+if (argv['app'] !== undefined) {
+  switch (argv['app']) {
+    case 'stream':
+      console.log('App selected: stream, starting with Stream');
+      new Stream(options);
+      break;
+    case 'load':
+      console.log('App selected: load, starting with Load');
+      new Load(options);
+      break;
+    case 'sim':
+    //       new Sim(options);
+    //       break;
+    //     case 'split':
+    //       new Split(options);
+    //       break;
+    default:
+      console.log('App selected: unknown (' + argv['app'] + '), starting with Load as default.');
+      new Load(options);
+      break;
+  }
+} else {
+  console.log('No app selected, starting with Load as default.');
+  new Load(options);
+}

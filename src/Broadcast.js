@@ -205,6 +205,9 @@ class OSC {
           // TODO
         }
       }
+    } else {
+      // TODO
+      console.log('received data for', theAddressPattern);
     }
   }
 

@@ -3,14 +3,15 @@ import Server from '../src/Server';
 
 export default class Base {
   constructor(options) {
-    this.options = options;
-    this.destinations = options.settings.destinations || [];
-    this.id = options.settings.id || 0;
+    console.log(JSON.stringify(options, null, 2));
+    this.settings = options.settings;
+    this.destinations = this.settings.destinations || [];
+    this.id = this.settings.id || 0;
     this.source = [];
-    this.external = options.settings.external || '../../external/';
-    this.bvh = options.settings.bvh[0].filename || 'storage/test-load.bvh';
-    this.updateFreq = options.settings.updateFrq || 20;
-    this.broadcastFreq = options.settings.broadcastFrq || 100;
+    this.external = this.settings.external || '../../external/';
+    this.bvh = this.settings.bvh[0].filePath || 'storage/test-load.bvh';
+    this.updateFreq = this.settings.updateFrq || 20;
+    this.broadcastFreq = this.settings.broadcastFrq || 100;
     this.init();
   }
 
@@ -42,11 +43,12 @@ export default class Base {
   }
 
   broadcast() {
+    console.log(this.options);
     this.web.xyz();
     this.broadcastFor.osc.xyz({
       dest: this.destinations,
-      split: this.options.split || false,
-      range: this.options.range || [],
+      split: this.settings.split || false,
+      range: this.settings.range || [],
     });
   }
 }
