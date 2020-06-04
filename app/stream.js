@@ -8,10 +8,15 @@ export default class Stream extends Base {
   }
 
   async init() {
-    (async () => {
-      return (await BvhParser).readFile();
-    })().then((body) => {
-      this.source.push(body);
+    this.settings.stream.forEach((stream) => {
+      (async () => {
+        return (await BvhParser).readFile();
+      })().then((body) => {
+        body.id = stream.id;
+        body.address = stream.address;
+        this.source.push(body);
+        console.log('body:', body.id, body.address);
+      });
     });
 
     new BvhStream({ source: this.source });

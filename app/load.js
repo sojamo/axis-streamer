@@ -21,7 +21,7 @@ export default class Load extends Base {
      *
      */
 
-    const file = path.join(__dirname, this.external + this.bvh);
+    const file = path.join(__dirname, this.external + this.load);
 
     const _self = this;
 

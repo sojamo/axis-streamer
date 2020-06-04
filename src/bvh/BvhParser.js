@@ -15,8 +15,8 @@
 
 import BvhBody from './BvhBody';
 import BvhJoint from './BvhJoint';
-import * as fs from 'fs';
 import { promisify } from 'util';
+import * as fs from 'fs';
 
 export default class BvhParser {
   #template;

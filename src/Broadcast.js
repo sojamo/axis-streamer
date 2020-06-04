@@ -8,11 +8,13 @@
 import BvhBody from './bvh/BvhBody';
 import BvhParser from './bvh/BvhParser';
 import BvhConstants from './bvh/BvhConstants';
+import Server from './Server';
 import * as osc from 'osc';
 
 export default class Broadcast {
   #osc;
   #source;
+  #ws;
 
   constructor(options) {
     this.#source = options.source || [];
@@ -28,6 +30,18 @@ export default class Broadcast {
       this.#osc = new OSC({ source: this.#source });
     }
     return this.#osc;
+  }
+
+  set ws(options) {
+    options.source = options.source || this.#source;
+    this.#ws = new WS(options);
+  }
+
+  get ws() {
+    if (this.#ws === undefined) {
+      this.#ws = new WS({ source: this.#source });
+    }
+    return this.#ws;
   }
 
   static addressSpace = {
@@ -61,6 +75,71 @@ export default class Broadcast {
     position: '/position',
     rotation: '/rotation',
   };
+}
+
+class WS {
+  constructor(options) {
+    this.#source = options.source || []; /* ref to array that stores BvhBody(s) in main script */
+    const _self = this;
+
+    const host = 'axis-online.glitch.me';
+    /** TODO
+     * clean this up.
+     *
+     * */
+
+    const WebSocket = require('ws');
+    this.#socket = new WebSocket('wss://' + host);
+
+    this.#socket.onopen = () => {
+      this.#socket.send('hello from axis-streamer');
+      setInterval(() => {
+        _self.xyz();
+      }, 100);
+    };
+
+    this.#socket.onmessage = (message) => {
+      console.log(`message received`, message.data);
+    };
+  }
+
+  xyz(options = {}) {
+    // const range = BvhConstants.defaultSkeleton;
+    const range = [
+      'Hips',
+      'RightLeg',
+      'RightFoot',
+      'LeftLeg',
+      'LeftFoot',
+      'RightArm',
+      'RightHand',
+      'LeftArm',
+      'LeftHand',
+      'Head',
+      'Spine3',
+      'Spine1',
+    ];
+    this.#source.forEach((body) => {
+      const id = body.id;
+      const data = Server.getJsonFor(body, range);
+      // this.#ws.sockets.emit('pn', { id, data });
+      // this.#socket.send(JSON.stringify(data));
+
+      Object.keys(data).forEach((key) => {
+        const x = Number(data[key][0].toFixed(1));
+        const y = Number(data[key][1].toFixed(1));
+        const z = Number(data[key][2].toFixed(1));
+        data[key] = [x, y, z];
+      });
+      // console.log('sending to ws', JSON.stringify(data).length);
+      if (id === 0) {
+        this.#socket.send(JSON.stringify({ id, data }));
+      }
+    });
+  }
+
+  #socket;
+  #source;
 }
 
 /**
@@ -161,7 +240,8 @@ class OSC {
     });
 
     this.#udpPort.on('error', (err) => {
-      console.log(err);
+      // console.log(err);
+      console.log('not available', err.address);
       //
       // TODO when receiving an (or after receiving multiple
       // for some time) error message, filter out address and
@@ -208,7 +288,7 @@ class OSC {
     } else {
       // TODO
       // check address pattern, extract jointName, and assign to theBody.flat[jointName]
-      console.log('received data for', theAddressPattern);
+      // console.log('received data for', theAddressPattern);
     }
   }
 
@@ -251,7 +331,7 @@ class OSC {
     range = range.length === 0 ? BvhConstants.defaultSkeleton : range;
 
     const isUVW = options.isUVW || false;
-    const isSplit = options.split || false;
+    let isSplit = true; // TODO Fix options.split || false;
 
     this.#source.forEach((el0) => {
       const id = el0.id;
@@ -332,13 +412,23 @@ class OSC {
 
       /* send to other remote desitnations if available */
       dest.forEach((destination) => {
-        const remote = destination.address || undefined;
-        const port = destination.port || -1;
-        if (remote !== undefined && port !== -1) {
-          this.#udpPort.send({ address, args }, remote, port);
-          split.forEach((message) => {
-            this.#udpPort.send(message, remote, port);
-          });
+        if (destination.active === true) {
+          const remote = destination.address || undefined;
+          const port = destination.port || -1;
+
+          if (remote !== undefined && port !== -1) {
+            if (destination.split === undefined) {
+              this.#udpPort.send({ address, args }, remote, port);
+            }
+
+            split.forEach((message) => {
+              if (message.address.startsWith('/pn/1')) {
+                // FIX
+                this.#udpPort.send(message, remote, port);
+                // console.log(message, remote, port);
+              }
+            });
+          }
         }
       });
     });

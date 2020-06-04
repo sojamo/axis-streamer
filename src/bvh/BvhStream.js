@@ -29,11 +29,12 @@ export default class BvhStream {
     });
 
     client.on('message', (msg, rinfo) => {
-      this.parseBuffer(msg);
+      this.parseBuffer(msg, rinfo.address);
     });
 
     client.on('listening', () => {
       const address = client.address();
+
       console.log(
         `### Listening for \n### BVH stream from Axis Neuron\n### ${address.address}:${address.port}\n`,
       );
@@ -42,13 +43,33 @@ export default class BvhStream {
     client.bind(thePort);
   }
 
-  parseBuffer(theData) {
+  parseBuffer(theData, theIpAddress) {
+    /** TODO
+     * to avoid parsing conflicts, thsi.#collect should be an
+     * associtive array with theIpAddress as key
+     */
+
     let header = theData.readUInt16LE(0);
+    let isParse = theData.length === 1024 ? false : true;
+
+    /** NOTE
+     * On mac, Axis Neuron sends 2 packets, the first one 1024 bytes long.
+     * On PC however, the message fits into 1 packet, 1480 bytes long.
+     * the following is a hack to make it work for both.
+     *
+     * FIX by distinguishing by IP
+     *
+     * */
+
     if (header === 56831) {
       this.#collect = Buffer.alloc(0);
       this.#collect = Buffer.concat([this.#collect, theData]);
     } else if (this.#collect !== undefined) {
       this.#collect = Buffer.concat([this.#collect, theData]);
+      isParse = true;
+    }
+
+    if (isParse) {
       /**
        * We are evaluating against Version 1.1.0.0
        * Axis Neuron User Manual_V3.8.1.5.pdf p.82
@@ -69,6 +90,7 @@ export default class BvhStream {
       const data = this.#collect.subarray(64, 64 + dataLength);
       const channels = {};
       let index = 0;
+
       for (let i = 0; i < dataLength; i += 24) {
         const v = [];
         v.push(data.readFloatLE(i + 0)); // x-pos
@@ -82,8 +104,11 @@ export default class BvhStream {
       }
 
       /* source is an array of BvhBody(s) */
-      this.#source.forEach((el) => {
-        el.processIncomingData({ frameIndex, channels });
+      this.#source.forEach((body) => {
+        // console.log(body.id, body.address, this.#source.length);
+        if (body.address === theIpAddress) {
+          body.processIncomingData({ frameIndex, channels });
+        }
       });
     }
   }

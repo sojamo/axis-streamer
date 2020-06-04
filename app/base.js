@@ -5,11 +5,10 @@ export default class Base {
   constructor(options) {
     console.log(JSON.stringify(options, null, 2));
     this.settings = options.settings;
-    this.destinations = this.settings.destinations || [];
-    this.id = this.settings.id || 0;
+    this.destination = this.settings.broadcast.osc || [];
     this.source = [];
     this.external = this.settings.external || '../../external/';
-    this.bvh = this.settings.bvh[0].filePath || 'storage/test-load.bvh';
+    this.load = this.settings.load[0].filePath || 'storage/test-load.bvh';
     this.updateFreq = this.settings.updateFrq || 20;
     this.broadcastFreq = this.settings.broadcastFrq || 100;
     this.init();
@@ -24,6 +23,7 @@ export default class Base {
     this.web = new Server({ source: this.source });
     this.broadcastFor = new Broadcast({ source: this.source });
     this.broadcastFor.osc = {};
+    this.broadcastFor.ws = {};
   }
 
   initUpdate() {
@@ -43,11 +43,11 @@ export default class Base {
   }
 
   broadcast() {
+    const dest = this.destination;
+    const split = this.settings.split || false;
+    const range = this.settings.range || [];
     this.web.xyz();
-    this.broadcastFor.osc.xyz({
-      dest: this.destinations,
-      split: this.settings.split || false,
-      range: this.settings.range || [],
-    });
+    this.broadcastFor.osc.xyz({ dest, split, range });
+    // this.broadcastFor.ws.xyz({ range });
   }
 }

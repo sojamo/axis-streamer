@@ -32,11 +32,8 @@ if (argv['app'] !== undefined) {
       new Load(options);
       break;
     case 'sim':
-    //       new Sim(options);
-    //       break;
-    //     case 'split':
-    //       new Split(options);
-    //       break;
+      // new Sim(options);
+      break;
     default:
       console.log('App selected: unknown (' + argv['app'] + '), starting with Load as default.');
       new Load(options);

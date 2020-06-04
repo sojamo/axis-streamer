@@ -4,7 +4,7 @@ import BvhConstants from './BvhConstants';
 export default class BvhBody {
   constructor(theId) {
     this.#id = theId;
-    this.#ip = '127.0.0.1';
+    this.#address = '127.0.0.1';
     this.#owner = BvhBody.owner.SELF;
 
     /** joints */
@@ -37,6 +37,8 @@ export default class BvhBody {
       this.#updateJoint(this.root);
       this.flatten();
     } else {
+      // TODO
+      // update remote body?
     }
   }
 
@@ -225,8 +227,8 @@ export default class BvhBody {
     return this.#flat;
   }
 
-  get ip() {
-    return this.#ip;
+  get address() {
+    return this.#address;
   }
 
   get nbFrames() {
@@ -276,8 +278,8 @@ export default class BvhBody {
     this.#flat = theValue;
   }
 
-  set ip(theIp) {
-    this.#ip = theIp;
+  set address(theAddress) {
+    this.#address = theAddress;
   }
 
   set root(theJoint) {
@@ -299,12 +301,12 @@ export default class BvhBody {
     return theVec;
   };
 
+  #address;
   #center;
   #currentFrame;
   #flat;
   #frameTime;
   #id;
-  #ip;
   #nbFrames;
   #owner;
   #play;

@@ -71,20 +71,25 @@ export default class Server {
   xyz(options = {}) {
     const range = options.range || BvhConstants.defaultSkeleton;
 
-    this.#source.forEach((el0) => {
-      const id = el0.id;
-      const data = {};
-      range.forEach((el1) => {
-        const joint = el0.flat[el1];
-        if (joint !== undefined) {
-          data[el1] = joint.positionAbsolute.xyz;
-          if (joint.hasEndPoint === true) {
-            data[el1 + 'End'] = joint.endPositionAbsolute.xyz;
-          }
-        }
-      });
+    this.#source.forEach((body) => {
+      const id = body.id;
+      const data = Server.getJsonFor(body, range);
       this.#ws.sockets.emit('pn', { id, data });
     });
+  }
+
+  static getJsonFor(theBody, theRange) {
+    const data = {};
+    theRange.forEach((el) => {
+      const joint = theBody.flat[el];
+      if (joint !== undefined) {
+        data[el] = joint.positionAbsolute.xyz;
+        if (joint.hasEndPoint === true) {
+          data[el + 'End'] = joint.endPositionAbsolute.xyz;
+        }
+      }
+    });
+    return data;
   }
 
   #ws;
