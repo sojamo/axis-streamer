@@ -2,15 +2,9 @@ import Broadcast from '../src/Broadcast';
 import Server from '../src/Server';
 
 export default class Base {
-  constructor(options) {
-    console.log(JSON.stringify(options, null, 2));
-    this.settings = options.settings;
-    this.destination = this.settings.broadcast.osc || [];
+  constructor(settings) {
+    this.settings = settings;
     this.source = [];
-    this.external = this.settings.external || '../../external/';
-    this.load = this.settings.load[0].filePath || 'storage/test-load.bvh';
-    this.updateFreq = this.settings.updateFrq || 20;
-    this.broadcastFreq = this.settings.broadcastFrq || 100;
     this.init();
   }
 
@@ -28,7 +22,7 @@ export default class Base {
 
   initUpdate() {
     /* stick to a good update-rate of 50 fps */
-    setInterval(this.update.bind(this), this.updateFreq);
+    setInterval(this.update.bind(this), this.settings.freq.update);
 
     /**
      * the second interval takes care of
@@ -39,15 +33,13 @@ export default class Base {
      * this is to prevent the network or receiver
      * from overloading.
      */
-    setInterval(this.broadcast.bind(this), this.broadcastFreq);
+    setInterval(this.broadcast.bind(this), this.settings.freq.broadcast);
   }
 
   broadcast() {
-    const dest = this.destination;
-    const split = this.settings.split || false;
-    const range = this.settings.range || [];
+    /** broadcast to the web */
     this.web.xyz();
-    this.broadcastFor.osc.xyz({ dest, split, range });
-    // this.broadcastFor.ws.xyz({ range });
+    /** broacast to OSC channels */
+    this.broadcastFor.osc.xyz(this.settings);
   }
 }

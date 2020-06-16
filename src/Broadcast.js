@@ -410,7 +410,7 @@ class OSC {
         }
       });
 
-      /* send to other remote desitnations if available */
+      /* send to other remote destinations if available */
       dest.forEach((destination) => {
         if (destination.active === true) {
           const remote = destination.address || undefined;

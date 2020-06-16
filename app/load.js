@@ -20,26 +20,43 @@ export default class Load extends Base {
      * ├── storage/
      *
      */
-
-    const file = path.join(__dirname, this.external + this.load);
-
+    const debug = require('debug')('load');
     const _self = this;
 
+    const dir = this.settings.get.general.external.dir;
+    const files = this.settings.get.load.files;
+    const result = [];
     (async () => {
-      return (await BvhParser).readFile({ file, id: this.id });
-    })().then((body) => {
-      this.source.push(body);
-      body.play();
-      console.log(`loading file\n${file}\n  ${this.source.length} BvhBody(s)`);
-      this.source.forEach((b) => {
-        const m = `  id: ${b.id}\tframes: ${b.nbFrames}\tframeTime: ${b.frameTime}`;
-        console.log(m);
+      files.forEach((el) => {
+        const pathToFile = path.join(__dirname, '../', dir, el.filePath);
+        debug(pathToFile);
+        (async () => {
+          return (await BvhParser).readFile({ file: pathToFile, id: _self.id });
+        })().then((file) => {
+          result.push(file);
+          return result;
+        });
       });
+      return await result;
+    })().then((t) => {
+      console.log(t);
     });
 
-    this.initNetwork();
+    // (async () => {
+    //   return (await BvhParser).readFile({ file: pathToFile, id: this.id });
+    // })().then((body) => {
+    //   this.source.push(body);
+    //   body.play();
+    //   console.log(`loading file\n${file}\n  ${this.source.length} BvhBody(s)`);
+    //   this.source.forEach((b) => {
+    //     const m = `  id: ${b.id}\tframes: ${b.nbFrames}\tframeTime: ${b.frameTime}`;
+    //     console.log(m);
+    //   });
+    // });
 
-    this.initUpdate();
+    // this.initNetwork();
+
+    // this.initUpdate();
   }
 
   update() {
