@@ -8,38 +8,44 @@
 import BvhBody from './bvh/BvhBody';
 import BvhParser from './bvh/BvhParser';
 import BvhConstants from './bvh/BvhConstants';
-import Server from './Server';
+import WebInterface from './WebInterface';
 import * as osc from 'osc';
+import { log } from './Log';
+import Settings from './Settings';
 
 export default class Broadcast {
   #osc;
+  #settings;
   #source;
   #ws;
 
   constructor(options) {
     this.#source = options.source || [];
+    this.#settings = options.settings || {};
   }
 
   set osc(options) {
     options.source = options.source || this.#source;
+    options.settings = options.settings || this.#settings;
     this.#osc = new OSC(options);
   }
 
   get osc() {
     if (this.#osc === undefined) {
-      this.#osc = new OSC({ source: this.#source });
+      this.#osc = new OSC({ source: this.#source, settings: this.#settings });
     }
     return this.#osc;
   }
 
   set ws(options) {
     options.source = options.source || this.#source;
+    options.settings = options.settings || this.#settings;
     this.#ws = new WS(options);
   }
 
   get ws() {
     if (this.#ws === undefined) {
-      this.#ws = new WS({ source: this.#source });
+      this.#ws = new WS({ source: this.#source, settings: this.#settings });
     }
     return this.#ws;
   }
@@ -80,13 +86,14 @@ export default class Broadcast {
 class WS {
   constructor(options) {
     this.#source = options.source || []; /* ref to array that stores BvhBody(s) in main script */
+    this.#settings = options.settings || {};
+
     const _self = this;
 
     const host = 'axis-online.glitch.me';
     /** TODO
      * clean this up.
-     *
-     * */
+     */
 
     const WebSocket = require('ws');
     this.#socket = new WebSocket('wss://' + host);
@@ -94,34 +101,28 @@ class WS {
     this.#socket.onopen = () => {
       this.#socket.send('hello from axis-streamer');
       setInterval(() => {
-        _self.xyz();
+        _self.send();
       }, 100);
     };
 
     this.#socket.onmessage = (message) => {
-      console.log(`message received`, message.data);
+      log.debug(`message received ${message.data}`);
+    };
+
+    this.#socket.onerror = (err) => {
+      log.warn(
+        `Broadcast.ws: can't establish connection with ${err.target.url}, host might be down?`,
+      );
     };
   }
 
-  xyz(options = {}) {
+  send(options = {}) {
     // const range = BvhConstants.defaultSkeleton;
-    const range = [
-      'Hips',
-      'RightLeg',
-      'RightFoot',
-      'LeftLeg',
-      'LeftFoot',
-      'RightArm',
-      'RightHand',
-      'LeftArm',
-      'LeftHand',
-      'Head',
-      'Spine3',
-      'Spine1',
-    ];
+    const range = BvhConstants.reducedSkeleton;
+
     this.#source.forEach((body) => {
       const id = body.id;
-      const data = Server.getJsonFor(body, range);
+      const data = WebInterface.getJsonFor(body, range);
       // this.#ws.sockets.emit('pn', { id, data });
       // this.#socket.send(JSON.stringify(data));
 
@@ -131,13 +132,18 @@ class WS {
         const z = Number(data[key][2].toFixed(1));
         data[key] = [x, y, z];
       });
-      // console.log('sending to ws', JSON.stringify(data).length);
+      log.debug(`Broadcast.ws sending to websocket, data-length: ${JSON.stringify(data).length}`);
+      /**
+       * TODO: use messagepack to serialize JSON
+       * https://github.com/ygoe/msgpack.js
+       */
       if (id === 0) {
         this.#socket.send(JSON.stringify({ id, data }));
       }
     });
   }
 
+  #settings;
   #socket;
   #source;
 }
@@ -147,20 +153,17 @@ class WS {
  *
  * implements https://github.com/colinbdclark/osc.js
  *
- * TODO
- * 1. broadcast to multiple IPs and ports.
- * remoteAddress should be array? and remotePort, too?
- * or a remote class/object {address: '127.0.0.1', port:5000} ?
- * 2. defaultSkeleton, send as blob?
- *
- * */
+ */
 
 class OSC {
   constructor(options) {
-    this.#localAddress = options.localAddress || '0.0.0.0';
-    this.#localPort = options.localPort || 5000;
-    this.#route = options.route || ((m) => {});
-    this.#source = options.source || []; /* ref to array that stores BvhBody(s) in main script */
+    /**
+     * this.#settings should exist at this point, creating
+     * a new instance of Settings in the following case is to
+     * prevent errors and Settings are set to the default Settings.
+     */
+    this.#settings = options.settings || new Settings(Settings.default);
+    this.#source = options.source || []; /** ref to array that stores BvhBody(s) in main script */
     (async () => {
       return BvhParser.build();
     })().then((parser) => this.#init(parser));
@@ -171,16 +174,17 @@ class OSC {
 
     /** start OSC over UDP */
     this.#udpPort = new osc.UDPPort({
-      localAddress: this.#localAddress,
-      localPort: this.#localPort,
+      localAddress: this.#settings.get.general.osc.address || '0.0.0.0',
+      localPort: this.#settings.get.general.osc.port || 5000,
     });
     this.#udpPort.on('ready', () => {
       let ipAddresses = this.getIPAddresses();
-      const out = [];
+      const inet = [` 0.0.0.0`, ` 127.0.0.1`];
       ipAddresses.forEach((addr, i) => {
-        out.push([addr, _self.#udpPort.options.localPort]);
+        inet.push(` ${addr}`);
       });
-      console.table(out);
+      log.info(`Broadcast.osc.init: available NetInterfaces:${inet}`);
+      log.info(`Broadcast.osc.init: using NetInterface: ${this.#udpPort.options.localAddress}`);
     });
 
     /** when a message is received */
@@ -188,6 +192,9 @@ class OSC {
       /** check if we are dealing with the right address space
        * address pattern must begin with /pn/ */
       if (m.address.startsWith('/pn/') === false) {
+        console.log('message from:');
+        console.log(rinfo);
+        console.log(this.#settings.get.broadcast.osc);
         return;
       }
 
@@ -213,7 +220,7 @@ class OSC {
       /** get the remote IP address and assign to BvhBody */
       const remoteAddress = rinfo.address;
       const n = this.#source.length;
-      // console.log(`got message from id ${id} @ ${remoteAddress} registered bodies: ${n}`);
+      log.debug(`got message from id ${id} @ ${remoteAddress} registered bodies: ${n}`);
 
       let body;
 
@@ -240,8 +247,7 @@ class OSC {
     });
 
     this.#udpPort.on('error', (err) => {
-      // console.log(err);
-      console.log('not available', err.address);
+      log.warn(`OSC destination not available ${err.address}`);
       //
       // TODO when receiving an (or after receiving multiple
       // for some time) error message, filter out address and
@@ -268,11 +274,14 @@ class OSC {
 
   parseIncomingDataFor(theBody, theAddressPattern, theArgs) {
     if (theAddressPattern.endsWith(Broadcast.addressSpace.allPositionAbsolute)) {
-      // console.log('parsing', theAddressPattern, 'for body-id', theBody.id);
+      log.debug(
+        `Broadcast.osc.parseIncomingDataFor: parsing ${theAddressPattern} for body-id ${theBody.id}`,
+      );
 
       for (let i = 0, n = 0; i < theArgs.length; i += 3, n += 1) {
-        /**  parse and assign absolute positions to body joints,
-         *  this will not calcualte relative position nor rotation,
+        /**
+         * parse and assign absolute positions to body joints,
+         * this will not calculate relative position nor rotation,
          * but will only update absolute position.
          */
 
@@ -288,18 +297,18 @@ class OSC {
     } else {
       // TODO
       // check address pattern, extract jointName, and assign to theBody.flat[jointName]
-      // console.log('received data for', theAddressPattern);
+      log.debug(`Broadcast.osc.parseIncomingDataFor: received data for  ${theAddressPattern}`);
     }
   }
 
   sendRaw(address, args, dest = []) {
-    dest.forEach((el) => {
-      this.#udpPort.send({ address, args }, el.address, el.port);
+    dest.forEach((destination) => {
+      this.#udpPort.send({ address, args }, destination.address, destination.port);
     });
   }
 
   /**
-   * xyz
+   * send
    * by default sends absolute xyz coordinates
    * stored in a single message and a single
    * list of floats:
@@ -312,150 +321,130 @@ class OSC {
    * the receiver must parse and route assign
    * coordinates accordingly.
    *
-   * @param {*} options
+   * @param {*} settings
    *
    */
 
-  xyz(options = {}) {
+  send(settings = {}) {
     /* destination specific */
-    const dest = options.dest || [];
+    const destinations = settings.get.broadcast.osc || [];
+    destinations
+      .filter((destination) => destination.active)
+      .forEach((destination) => {
+        /** compose arguments for osc message */
+        this.#source.forEach((source) => {
+          const id = source.id;
+          const oscMessage = this.composeOscMessageFor(id, source, destination);
+          /** send osc message to remote destination */
+          const message = oscMessage.message;
+          const addr = message.address;
+          /** first send out single multi-args messages */
+          this.#udpPort.send(message, destination.address, destination.port);
+          /** then send out single single-arg messages (to unreal) */
+          oscMessage.splitMessages.forEach((m) => {
+            this.#udpPort.send(m, destination.address, destination.port);
+          });
+        });
+      });
+  }
 
-    /* data specific */
-    const path =
-      options.isUVW === undefined
-        ? 'allPositionAbsolute'
-        : options.isUVW
-        ? 'allAbsolute'
-        : 'allPositionAbsolute';
-    let range = options.range || BvhConstants.defaultSkeleton;
-    range = range.length === 0 ? BvhConstants.defaultSkeleton : range;
+  composeOscMessageFor(id, source, dest = {}) {
+    /**
+     * there are currently 2 formats xyz and xyzuvw in which data can be sent.
+     * xyz will include the absolute position for each joint, xyzuvw will add
+     * the rotation angle the data of a joint.
+     */
+    const isRotationIncluded = dest.format !== undefined ? dest.format === 'xyzuvw' : false;
 
-    const isUVW = options.isUVW || false;
-    let isSplit = true; // TODO Fix options.split || false;
+    /** prepare the address pattern for the OscMessage according to the data format */
+    const path = isRotationIncluded
+      ? Broadcast.addressSpace.allAbsolute
+      : Broadcast.addressSpace.allPositionAbsolute;
 
-    this.#source.forEach((el0) => {
-      const id = el0.id;
-      const args = [];
-      const address = this.getPrefix(id) + Broadcast.addressSpace[path];
-      const split = [];
-      range.forEach((el1) => {
-        const joint = el0.flat[el1];
-        if (joint !== undefined) {
-          const x = joint.positionAbsolute.x;
-          const y = joint.positionAbsolute.y;
-          const z = joint.positionAbsolute.z;
+    /** check if a range of joints is specified, otherwise use the default range */
+    const range = dest.range || BvhConstants.defaultSkeleton;
+    const isSplit = dest.split || false;
+    const splitMessages = [];
+    const oscArguments = [];
+    const oscAddressPattern = this.getPrefix(id) + path;
 
-          args.push({ type: 'f', value: x });
-          args.push({ type: 'f', value: y });
-          args.push({ type: 'f', value: z });
+    range.forEach((el1) => {
+      const joint = source.flat[el1];
+      if (joint !== undefined) {
+        const x = joint.positionAbsolute.x;
+        const y = joint.positionAbsolute.y;
+        const z = joint.positionAbsolute.z;
 
-          if (isSplit === true) {
-            const addr = `/pn/${id}${Broadcast.addressSpace[el1]}${Broadcast.addressSpace.positionAbsolute}`;
-            split.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
-            split.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
-            split.push({ address: `${addr}/z`, args: { type: 'f', value: z } });
+        oscArguments.push({ type: 'f', value: x });
+        oscArguments.push({ type: 'f', value: y });
+        oscArguments.push({ type: 'f', value: z });
+
+        if (isSplit) {
+          const addr = `/pn/${id}${Broadcast.addressSpace[el1]}${Broadcast.addressSpace.positionAbsolute}`;
+          splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
+          splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
+          splitMessages.push({ address: `${addr}/z`, args: { type: 'f', value: z } });
+        }
+        if (isRotationIncluded) {
+          const u = joint.rotation.x;
+          const v = joint.rotation.y;
+          const w = joint.rotation.z;
+
+          oscArguments.push({ type: 'f', value: u });
+          oscArguments.push({ type: 'f', value: v });
+          oscArguments.push({ type: 'f', value: w });
+
+          if (isSplit) {
+            const addr = `/pn/${id}${Broadcast.addressSpace[el1]}${Broadcast.addressSpace.rotation}`;
+            splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
+            splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
+            splitMessages.push({ address: `${addr}/z`, args: { type: 'f', value: w } });
           }
-          if (isUVW) {
+        }
+        if (joint.hasEndPoint) {
+          const x = joint.endPositionAbsolute.x;
+          const y = joint.endPositionAbsolute.y;
+          const z = joint.endPositionAbsolute.z;
+
+          oscArguments.push({ type: 'f', value: x });
+          oscArguments.push({ type: 'f', value: y });
+          oscArguments.push({ type: 'f', value: z });
+          if (isSplit) {
+            const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
+              Broadcast.addressSpace.positionAbsolute
+            }`;
+
+            splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
+            splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
+            splitMessages.push({ address: `${addr}/z`, args: { type: 'f', value: z } });
+          }
+          if (isRotationIncluded) {
             const u = joint.rotation.x;
             const v = joint.rotation.y;
             const w = joint.rotation.z;
 
-            args.push({ type: 'f', value: u });
-            args.push({ type: 'f', value: v });
-            args.push({ type: 'f', value: w });
+            oscArguments.push({ type: 'f', value: u });
+            oscArguments.push({ type: 'f', value: v });
+            oscArguments.push({ type: 'f', value: w });
 
-            if (isSplit === true) {
-              const addr = `/pn/${id}${Broadcast.addressSpace[el1]}${Broadcast.addressSpace.rotation}`;
-              split.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
-              split.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
-              split.push({ address: `${addr}/z`, args: { type: 'f', value: w } });
-            }
-          }
-          if (joint.hasEndPoint === true) {
-            const x = joint.endPositionAbsolute.x;
-            const y = joint.endPositionAbsolute.y;
-            const z = joint.endPositionAbsolute.z;
-
-            args.push({ type: 'f', value: x });
-            args.push({ type: 'f', value: y });
-            args.push({ type: 'f', value: z });
-            if (isSplit === true) {
+            if (isSplit) {
               const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
-                Broadcast.addressSpace.positionAbsolute
+                Broadcast.addressSpace.rotation
               }`;
-
-              split.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
-              split.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
-              split.push({ address: `${addr}/z`, args: { type: 'f', value: z } });
-            }
-            if (isUVW) {
-              const u = joint.rotation.x;
-              const v = joint.rotation.y;
-              const w = joint.rotation.z;
-
-              args.push({ type: 'f', value: u });
-              args.push({ type: 'f', value: v });
-              args.push({ type: 'f', value: w });
-
-              if (isSplit === true) {
-                const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
-                  Broadcast.addressSpace.rotation
-                }`;
-                split.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
-                split.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
-                split.push({ address: `${addr}/z`, args: { type: 'f', value: w } });
-              }
+              splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
+              splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
+              splitMessages.push({ address: `${addr}/z`, args: { type: 'f', value: w } });
             }
           }
         }
-      });
-
-      /* send to other remote destinations if available */
-      dest.forEach((destination) => {
-        if (destination.active === true) {
-          const remote = destination.address || undefined;
-          const port = destination.port || -1;
-
-          if (remote !== undefined && port !== -1) {
-            if (destination.split === undefined) {
-              this.#udpPort.send({ address, args }, remote, port);
-            }
-
-            split.forEach((message) => {
-              if (message.address.startsWith('/pn/1')) {
-                // FIX
-                this.#udpPort.send(message, remote, port);
-                // console.log(message, remote, port);
-              }
-            });
-          }
-        }
-      });
+      }
     });
+    const message = { address: oscAddressPattern, args: oscArguments };
+    return { message, splitMessages };
   }
 
   getPrefix(theId) {
     return `/pn/${theId}`;
-  }
-
-  /**
-   * xyzuvw
-   * like xyz, function xyzuvw sends absolute
-   * coordinates as well as (and followed by) rotation
-   * angles in degrees. function xyz will do the job
-   * by putting together the OSC message.
-   *
-   * @param {*} options
-   *
-   */
-
-  xyzuvw(options = {}) {
-    this.xyz({
-      source: options.source || {},
-      range: options.range || BvhConstants.defaultSkeleton,
-      isUVW: true,
-      dest: options.dest || [],
-    });
   }
 
   getIPAddresses() {
@@ -475,9 +464,7 @@ class OSC {
     return ipAddresses;
   }
 
-  #localAddress;
-  #localPort;
-  #route;
+  #settings;
   #source;
   #udpPort;
 }
