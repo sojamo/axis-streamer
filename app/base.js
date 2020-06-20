@@ -1,5 +1,6 @@
 import Broadcast from '../src/Broadcast';
-import Server from '../src/Server';
+import WebInterface from '../src/WebInterface';
+import { log } from '../src/Log';
 
 export default class Base {
   constructor(settings) {
@@ -9,21 +10,21 @@ export default class Base {
   }
 
   init() {
-    console.log('automated message: your class must implement function init()');
+    log.warn('base.js: automated message, the extending class must implement function init().');
   }
 
   initNetwork() {
     /* initialise network components */
-    this.web = new Server({ source: this.source });
-    this.broadcastFor = new Broadcast({ source: this.source });
+    const { source, settings } = this;
+    this.web = new WebInterface({ source, settings });
+    this.broadcastFor = new Broadcast({ source, settings });
     this.broadcastFor.osc = {};
     this.broadcastFor.ws = {};
   }
 
   initUpdate() {
     /* stick to a good update-rate of 50 fps */
-    setInterval(this.update.bind(this), this.settings.freq.update);
-
+    setInterval(this.update.bind(this), this.settings.get.general.freq.update);
     /**
      * the second interval takes care of
      * broadcasting message. here however we
@@ -33,13 +34,13 @@ export default class Base {
      * this is to prevent the network or receiver
      * from overloading.
      */
-    setInterval(this.broadcast.bind(this), this.settings.freq.broadcast);
+    setInterval(this.broadcast.bind(this), this.settings.get.general.freq.broadcast);
   }
 
   broadcast() {
     /** broadcast to the web */
-    this.web.xyz();
+    this.web.send(this.settings);
     /** broacast to OSC channels */
-    this.broadcastFor.osc.xyz(this.settings);
+    this.broadcastFor.osc.send(this.settings);
   }
 }
