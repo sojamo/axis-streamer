@@ -63,8 +63,9 @@ export default class BvhParser {
 
   static async readFile(options = {}) {
     const id = options.id === undefined ? 1 : options.id;
-    // NOTE || value OR default (options.id || 1) will not
-    // work if we can expect 0 as value.
+    /** NOTE: || value OR default (options.id || 1) will not
+     * work if we expect 0 as value.
+     */
 
     const file = options.file || './assets/test.bvh';
     const pReadFile = promisify(fs.readFile);
@@ -145,7 +146,9 @@ export default class BvhParser {
       }
       args.currentLine++;
     }
-    console.log('Something strage');
+    log.warn(
+      `BvhParser.parseJoint: Something strange happend while parsing BVH data. Wrong format?`,
+    );
     return joint;
   }
 

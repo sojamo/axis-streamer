@@ -11,9 +11,11 @@
  */
 
 import BvhConstants from './BvhConstants';
+import Settings from '../Settings';
 
 export default class BvhStream {
   constructor(options = {}) {
+    this.#settings = options.settings || new Settings(Settings.default);
     this.initSocket(options.port || 7002);
     this.#source = options.source || [];
     this.#collect = '';
@@ -24,7 +26,7 @@ export default class BvhStream {
     const client = dgram.createSocket('udp4');
 
     client.on('error', (err) => {
-      console.log(`server error:\n${err.stack}`);
+      log.error(`BvhStream.initSocket: server error ${err.stack}`);
       client.close();
     });
 
@@ -35,8 +37,8 @@ export default class BvhStream {
     client.on('listening', () => {
       const address = client.address();
 
-      console.log(
-        `### Listening for \n### BVH stream from Axis Neuron\n### ${address.address}:${address.port}\n`,
+      log.info(
+        `BvhStream.initSocket: listening for BVH stream from Axis Neuron at ${address.address}:${address.port}`,
       );
     });
 
@@ -73,6 +75,15 @@ export default class BvhStream {
       /**
        * We are evaluating against Version 1.1.0.0
        * Axis Neuron User Manual_V3.8.1.5.pdf p.82
+       *
+       * inside the Axis Neuron app, the output format
+       * must be configured for BVH Data as follows:
+       * 1. Frequency reducing: ideally is below 1,
+       * decent results are still acceptable with
+       * 1/4 and even 1/8
+       * 2. Rotation: YXZ
+       * 3. Displacemen: ticked
+       * 4. Reference: not ticked
        */
       const headerToken = this.#collect.readUInt16LE(0); // 56831
       const version = this.#collect.readUInt32BE(2); // 00 00 01 01 = 1.1.0.0
@@ -103,9 +114,13 @@ export default class BvhStream {
         index++;
       }
 
-      /* source is an array of BvhBody(s) */
+      /** source is an array of BvhBody(s) */
       this.#source.forEach((body) => {
-        // console.log(body.id, body.address, this.#source.length);
+        log.debbug(`${body.id}, ${body.address}, ${this.#source.length}`);
+
+        /** check the incoming data's IP address against the
+         * registered IP (as identifier) to then process data.
+         */
         if (body.address === theIpAddress) {
           body.processIncomingData({ frameIndex, channels });
         }
@@ -114,5 +129,6 @@ export default class BvhStream {
   }
 
   #collect;
+  #settings;
   #source;
 }

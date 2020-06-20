@@ -23,6 +23,21 @@ export default class BvhConstants {
     'Spine',
   ];
 
+  static reducedSkeleton = [
+    'Hips',
+    'RightLeg',
+    'RightFoot',
+    'LeftLeg',
+    'LeftFoot',
+    'RightArm',
+    'RightHand',
+    'LeftArm',
+    'LeftHand',
+    'Head',
+    'Spine3',
+    'Spine1',
+  ];
+
   static skeleton = [
     'Hips',
     'RightUpLeg',
