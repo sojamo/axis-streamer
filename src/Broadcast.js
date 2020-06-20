@@ -192,9 +192,14 @@ class OSC {
       /** check if we are dealing with the right address space
        * address pattern must begin with /pn/ */
       if (m.address.startsWith('/pn/') === false) {
-        console.log('message from:');
-        console.log(rinfo);
-        console.log(this.#settings.get.broadcast.osc);
+        if (m.address.startsWith('/register')) {
+          /** TODO let client register and add itself to settings.get.broadcast.osc */
+
+          log.debug('message from:');
+          log.debug(rinfo);
+          log.debug(this.#settings.get.broadcast.osc);
+        }
+
         return;
       }
 
