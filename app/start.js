@@ -5,15 +5,15 @@ import { log } from '../src/Log';
 
 const fs = require('fs');
 const argv = require('minimist')(process.argv.slice(2));
-const path = '../external/';
 let settings;
 
 Object.keys(argv).forEach((key) => {
   const val = argv[key];
   switch (key) {
     case 'settings':
-      const file = val === true ? 'settings-todo.json' : val;
-      settings = new Settings(JSON.parse(fs.readFileSync(path + file, 'utf-8')));
+      const pathToSettings = '../external/settings/';
+      const fileName = val === true ? 'settings-todo.json' : val;
+      settings = new Settings(JSON.parse(fs.readFileSync(pathToSettings + fileName, 'utf-8')));
       break;
   }
 });
