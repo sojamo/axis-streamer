@@ -12,6 +12,7 @@
 
 import BvhConstants from './BvhConstants';
 import Settings from '../Settings';
+import { log } from '../Log';
 
 export default class BvhStream {
   constructor(options = {}) {
@@ -116,7 +117,11 @@ export default class BvhStream {
 
       /** source is an array of BvhBody(s) */
       this.#source.forEach((body) => {
-        log.debbug(`${body.id}, ${body.address}, ${this.#source.length}`);
+        log.debug(`
+          BvhStream.parseBuffer: 
+          id:${body.id}, 
+          ip:${body.address}, 
+          total number of sources:${this.#source.length}`);
 
         /** check the incoming data's IP address against the
          * registered IP (as identifier) to then process data.
