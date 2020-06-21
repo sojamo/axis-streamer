@@ -111,7 +111,7 @@ export default class WebInterface {
     });
   }
 
-  send(settings = {}) {
+  publish(settings = {}) {
     const range = settings.get.server.web.range || BvhConstants.defaultSkeleton;
     const packet = { address: 'pn', args: [] };
 

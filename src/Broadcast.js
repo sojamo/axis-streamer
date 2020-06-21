@@ -99,6 +99,7 @@ class WS {
     this.#socket = new WebSocket('wss://' + host);
 
     this.#socket.onopen = () => {
+      /** TODO send msgpack formatted hello-message to initiate communication */
       this.#socket.send('hello from axis-streamer');
       setInterval(() => {
         _self.send();
@@ -192,7 +193,7 @@ class OSC {
       /** check if we are dealing with the right address space
        * address pattern must begin with /pn/ */
       if (m.address.startsWith('/pn/') === false) {
-        if (m.address.startsWith('/register')) {
+        if (m.address.startsWith('/subscribe')) {
           /** TODO let client register and add itself to settings.get.broadcast.osc */
 
           log.debug('message from:');
@@ -330,7 +331,7 @@ class OSC {
    *
    */
 
-  send(settings = {}) {
+  publish(settings = {}) {
     /* destination specific */
     const destinations = settings.get.broadcast.osc || [];
     destinations
