@@ -51,8 +51,8 @@ export default class Settings {
     },
     load: {
       files: [
-        { filePath: 'storage/test-load-1.bvh', label: 'default', id: 1 },
-        { filePath: 'storage/test-load-2.bvh', label: 'default', id: 2 },
+        { filePath: 'storage/bvh/test-load-1.bvh', label: 'default', id: 1 },
+        { filePath: 'storage/bvh/test-load-2.bvh', label: 'default', id: 2 },
       ],
       description: `contains an array of paths to bvh files to load from and then 
         playback. These files should be located inside external. Useful 
