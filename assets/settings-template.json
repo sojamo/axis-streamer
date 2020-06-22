@@ -1,0 +1,55 @@
+{
+  "label": "settings-template",
+  "general": {
+    "osc": {
+      "port": 5000,
+      "address": "0.0.0.0"
+    },
+    "freq": {
+      "update": 20,
+      "broadcast": 100
+    },
+    "external": {
+      "dir": "../external/"
+    }
+  },
+  "load": {
+    "files": [
+      {
+        "active": true,
+        "id": 2,
+        "filePath": "storage/bvh/test.bvh",
+        "label": "a-file"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "active": true,
+      "id": 1,
+      "address": "127.0.0.1",
+      "label": "local",
+      "type": "axis-neuron"
+    }
+  ],
+  "server": {
+    "web": {
+      "path": {
+        "public": "public/",
+        "app": "../external/app/"
+      },
+      "port": 5080
+    }
+  },
+  "broadcast": {
+    "osc": [
+      {
+        "active": true,
+        "address": "127.0.0.1",
+        "format": "xyz",
+        "label": "local-5001",
+        "port": 5001
+      }
+    ]
+  }
+}
