@@ -11,9 +11,12 @@
  */
 
 import BvhConstants from './BvhConstants';
+import Settings from '../Settings';
+import { log } from '../Log';
 
 export default class BvhStream {
   constructor(options = {}) {
+    this.#settings = options.settings || new Settings(Settings.default);
     this.initSocket(options.port || 7002);
     this.#source = options.source || [];
     this.#collect = '';
@@ -24,34 +27,61 @@ export default class BvhStream {
     const client = dgram.createSocket('udp4');
 
     client.on('error', (err) => {
-      console.log(`server error:\n${err.stack}`);
+      log.error(`BvhStream.initSocket: server error ${err.stack}`);
       client.close();
     });
 
     client.on('message', (msg, rinfo) => {
-      this.parseBuffer(msg);
+      this.parseBuffer(msg, rinfo.address);
     });
 
     client.on('listening', () => {
       const address = client.address();
-      console.log(
-        `### Listening for \n### BVH stream from Axis Neuron\n### ${address.address}:${address.port}\n`,
-      );
+      log.info(`✓ BvhStream.initSocket: listening for stream from ${address.address}:${address.port}`);
     });
 
     client.bind(thePort);
   }
 
-  parseBuffer(theData) {
+  parseBuffer(theData, theIpAddress) {
+    /** TODO
+     * to avoid parsing conflicts, thsi.#collect should be an
+     * associtive array with theIpAddress as key
+     */
+
     let header = theData.readUInt16LE(0);
+    let isParse = theData.length === 1024 ? false : true;
+
+    /** NOTE
+     * On mac, Axis Neuron sends 2 packets, the first one 1024 bytes long.
+     * On PC however, the message fits into 1 packet, 1480 bytes long.
+     * the following is a hack to make it work for both.
+     *
+     * FIX by distinguishing by IP
+     *
+     * */
+
     if (header === 56831) {
       this.#collect = Buffer.alloc(0);
       this.#collect = Buffer.concat([this.#collect, theData]);
     } else if (this.#collect !== undefined) {
       this.#collect = Buffer.concat([this.#collect, theData]);
+      isParse = true;
+    }
+
+    if (isParse) {
       /**
        * We are evaluating against Version 1.1.0.0
        * Axis Neuron User Manual_V3.8.1.5.pdf p.82
+       *
+       * inside the Axis Neuron app, the output format
+       * must be configured for BVH Data as follows:
+       * 1. Frequency reducing: ideally is below 1,
+       * decent results are still acceptable with
+       * 1/4 and even 1/8
+       * 2. Rotation: YXZ
+       * 3. Displacemen: ticked
+       * 4. Reference: not ticked
        */
       const headerToken = this.#collect.readUInt16LE(0); // 56831
       const version = this.#collect.readUInt32BE(2); // 00 00 01 01 = 1.1.0.0
@@ -69,6 +99,7 @@ export default class BvhStream {
       const data = this.#collect.subarray(64, 64 + dataLength);
       const channels = {};
       let index = 0;
+
       for (let i = 0; i < dataLength; i += 24) {
         const v = [];
         v.push(data.readFloatLE(i + 0)); // x-pos
@@ -81,13 +112,25 @@ export default class BvhStream {
         index++;
       }
 
-      /* source is an array of BvhBody(s) */
-      this.#source.forEach((el) => {
-        el.processIncomingData({ frameIndex, channels });
+      /** source is an array of BvhBody(s) */
+      this.#source.forEach((body) => {
+        log.debug(`
+          BvhStream.parseBuffer: 
+          id:${body.id}, 
+          ip:${body.address}, 
+          total number of sources:${this.#source.length}`);
+
+        /** check the incoming data's IP address against the
+         * registered IP (as identifier) to then process data.
+         */
+        if (body.address === theIpAddress) {
+          body.processIncomingData({ frameIndex, channels });
+        }
       });
     }
   }
 
   #collect;
+  #settings;
   #source;
 }

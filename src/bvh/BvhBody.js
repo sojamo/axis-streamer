@@ -4,8 +4,9 @@ import BvhConstants from './BvhConstants';
 export default class BvhBody {
   constructor(theId) {
     this.#id = theId;
-    this.#ip = '127.0.0.1';
+    this.#address = '127.0.0.1';
     this.#owner = BvhBody.owner.SELF;
+    this.#mode = BvhBody.MODE_IDLE;
 
     /** joints */
     this.#root = undefined;
@@ -21,7 +22,7 @@ export default class BvhBody {
 
     /** playback */
     this.motionLoop = false;
-    this.#play = false;
+    this.#play = true;
   }
 
   /**
@@ -29,14 +30,20 @@ export default class BvhBody {
    * must be called by a program to update
    * the skeleton data.
    */
+
   update() {
     if (this.#owner === BvhBody.owner.SELF) {
-      if (this.#play) {
-        this.#updateFrames();
+      if (this.mode === BvhBody.MODE_PLAYBACK) {
+        if (this.#play) {
+          this.#updateFrames();
+        }
       }
+
       this.#updateJoint(this.root);
       this.flatten();
     } else {
+      // TODO
+      // update remote body?
     }
   }
 
@@ -48,7 +55,7 @@ export default class BvhBody {
      * dataLength must be 354
      * currently there is no .bvh format check
      * we expect 59 joints (see BvhConstants.skeleton)
-     * with 6 float values per channel where
+     * we
      * xyz-position followed by yxz-rotation
      */
 
@@ -66,7 +73,6 @@ export default class BvhBody {
         channels[BvhConstants.skeleton[index]] = v;
         index++;
       }
-
       this.processIncomingData({ frameIndex: this.currentFrame, channels });
     } else {
       console.warn(
@@ -225,8 +231,8 @@ export default class BvhBody {
     return this.#flat;
   }
 
-  get ip() {
-    return this.#ip;
+  get address() {
+    return this.#address;
   }
 
   get nbFrames() {
@@ -249,6 +255,9 @@ export default class BvhBody {
     return this.#owner;
   }
 
+  get mode() {
+    return this.#mode;
+  }
   /* setter */
 
   set frameTime(theValue) {
@@ -276,8 +285,8 @@ export default class BvhBody {
     this.#flat = theValue;
   }
 
-  set ip(theIp) {
-    this.#ip = theIp;
+  set address(theAddress) {
+    this.#address = theAddress;
   }
 
   set root(theJoint) {
@@ -286,6 +295,10 @@ export default class BvhBody {
 
   set owner(theEnum) {
     this.#owner = theEnum;
+  }
+
+  set mode(theMode) {
+    this.#mode = theMode;
   }
 
   /* static */
@@ -299,16 +312,21 @@ export default class BvhBody {
     return theVec;
   };
 
+  #address;
   #center;
   #currentFrame;
   #flat;
   #frameTime;
   #id;
-  #ip;
+  #mode;
   #nbFrames;
   #owner;
   #play;
   #root;
+
+  static MODE_IDLE = 0;
+  static MODE_PLAYBACK = 1;
+  static MODE_STREAM = 2;
 
   static owner = {
     SELF: 0,

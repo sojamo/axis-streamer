@@ -1,4 +1,4 @@
-let body = {};
+const body = {};
 let ry = 0,
   x = 0,
   y = 0,
@@ -9,11 +9,18 @@ let ry = 0,
   nz = 0;
 
 let isMove = false;
+let font;
 
+function preload() {
+  font = loadFont('assets/SourceCodePro-Medium.otf');
+}
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   connectAxis({ target: this.updateAxisData });
   noStroke();
+  textFont(font);
+  textSize(24);
+  textAlign(CENTER, CENTER);
 }
 
 function draw() {
@@ -37,9 +44,11 @@ function draw() {
   let cs = 200;
   translate((-cs * cx) / 2, (-cs * cy) / 2);
 
+  const c0 = 10;
+  const c1 = 20;
   for (let x = 0; x < cx; x++) {
     for (let y = 0; y < cy; y++) {
-      fill(255, x % 2 === 0 ? (y % 2 === 0 ? 30 : 60) : y % 2 === 0 ? 60 : 30);
+      fill(255, x % 2 === 0 ? (y % 2 === 0 ? c0 : c1) : y % 2 === 0 ? c1 : c0);
       rect(cs * x, cs * y, cs, cs);
     }
   }
@@ -50,6 +59,21 @@ function draw() {
   Object.keys(body).forEach((id) => {
     fill(255);
     push();
+    if (body[id].now['Head']) {
+      /** render id */
+      push();
+      let v = body[id].now['Head'];
+      translate(v[0], v[1], v[2]);
+      translate(0, -50, 0);
+      stroke(255, 100);
+      noFill();
+      ellipse(0, 0, 40, 40);
+      fill(255);
+      text(id, 0, -4);
+      pop();
+    }
+
+    /** render  joints */
     Object.keys(body[id].now).forEach((joint) => {
       push();
       let v = body[id].now[joint];
@@ -58,15 +82,15 @@ function draw() {
       pop();
     });
     pop();
-    translate(-200, 0, 0);
-    rotateY(HALF_PI);
   });
   pop();
 
-  x += (nx - x) * 0.1;
-  y += (ny - y) * 0.1;
-  z += (nz - z) * 0.1;
-  ry += (nry - ry) * 0.1;
+  const vel = 0.1;
+
+  x += (nx - x) * vel;
+  y += (ny - y) * vel;
+  z += (nz - z) * vel;
+  ry += (nry - ry) * vel;
 }
 
 function keyPressed() {
@@ -107,13 +131,13 @@ function updateBody() {
    * latest coordinates received and current
    * xyz coordinates.
    */
-  const s = 0.1;
+  const vel = 0.1;
   Object.keys(body).forEach((id) => {
     const sk = body[id];
     Object.keys(sk.soon).forEach((joint) => {
-      sk.now[joint][0] += (sk.soon[joint][0] - sk.now[joint][0]) * s;
-      sk.now[joint][1] += (sk.soon[joint][1] - sk.now[joint][1]) * s;
-      sk.now[joint][2] += (sk.soon[joint][2] - sk.now[joint][2]) * s;
+      sk.now[joint][0] += (sk.soon[joint][0] - sk.now[joint][0]) * vel;
+      sk.now[joint][1] += (sk.soon[joint][1] - sk.now[joint][1]) * vel;
+      sk.now[joint][2] += (sk.soon[joint][2] - sk.now[joint][2]) * vel;
       if (sk.now[joint].length == 6) {
         // TODO add rotation
       }

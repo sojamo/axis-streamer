@@ -1,4 +1,47 @@
-*, body {
-    margin:0;
-    padding:0;
+*,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.settings {
+  display: flex;
+  flex-direction: row;
+  background-color: rgba(255, 255, 255, 0.2);
+  position: fixed;
+  color: #ffffff;
+  font-size: 12px;
+  top: 0px;
+  left: 0px;
+  height: 100vh;
+  width: 50%;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.settings .content {
+  min-width: 90%;
+}
+
+.settings h1 {
+  padding: 10px;
+  font-size: 20px;
+  font-weight: normal;
+  margin-bottom: 40px;
+}
+
+.settings .button {
+  flex-grow: 1;
+}
+
+.settings .button button {
+  width: 32px;
+  height: 32px;
+  background-color: #ccc;
+  color: #000;
+  font-size: 16px;
+  outline: none;
+  border: none;
+  border-radius: 5px;
 }
