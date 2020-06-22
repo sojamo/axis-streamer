@@ -37,10 +37,7 @@ export default class BvhStream {
 
     client.on('listening', () => {
       const address = client.address();
-
-      log.info(
-        `BvhStream.initSocket: listening for BVH stream from Axis Neuron at ${address.address}:${address.port}`,
-      );
+      log.info(`✓ BvhStream.initSocket: listening for stream from ${address.address}:${address.port}`);
     });
 
     client.bind(thePort);
