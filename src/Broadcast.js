@@ -90,34 +90,53 @@ class WS {
 
     const _self = this;
 
-    const host = 'axis-online.glitch.me';
-    /** TODO
-     * clean this up.
+    /**
+     * TODO
+     * glitch.com currently does not allow nodejs websockets
+     * to connect, see issue https://support.glitch.com/t/nodejs-websocket-server/26570/4
+     * and https://glitch.com/edit/#!/ws-client-issue
+     *
+     * in case issue remains, try heroku
+     * https://devcenter.heroku.com/articles/node-websockets
+     *
      */
 
-    const WebSocket = require('ws');
-    this.#socket = new WebSocket('wss://' + host);
+    /**
+     * NOTE
+     * the ? below refers to optional chaining
+     * see https://github.com/tc39/proposal-optional-chaining
+     * */
 
-    this.#socket.onopen = () => {
-      /** TODO send msgpack formatted hello-message to initiate communication */
-      this.#socket.send('hello from axis-streamer');
-      setInterval(() => {
-        _self.send();
-      }, 100);
-    };
+    if (this.#settings.get.broadcast?.web?.active || false) {
+      const host = 'axis-online.glitch.me';
+      const url = 'wss://' + host;
+      const WebSocket = require('ws'); /** https://github.com/websockets/ws */
 
-    this.#socket.onmessage = (message) => {
-      log.debug(`message received ${message.data}`);
-    };
+      this.#socket = new WebSocket(url);
 
-    this.#socket.onerror = (err) => {
-      log.warn(
-        `Broadcast.ws: can't establish connection with ${err.target.url}, host might be down?`,
-      );
-    };
+      this.#socket.onopen = () => {
+        /** TODO send msgpack formatted hello-message to initiate communication */
+        log.info(`Broadcast.socket.onopen: connection to ${host} established.`);
+        this.#socket.send('hello from axis-streamer');
+        setInterval(() => {
+          _self.publish();
+        }, 100);
+      };
+
+      this.#socket.onmessage = (message) => {
+        console.log(`message received ${message.data}`);
+        log.debug(`message received ${message.data}`);
+      };
+
+      this.#socket.onerror = (err) => {
+        log.warn(`Broadcast.ws: can't establish connection with ${err.target.url}, host might be down? ${err.message}`);
+      };
+    } else {
+      log.info(`⍻ Broadcast.ws: sending data to remote server not active`);
+    }
   }
 
-  send(options = {}) {
+  publish(options = {}) {
     // const range = BvhConstants.defaultSkeleton;
     const range = BvhConstants.reducedSkeleton;
 
@@ -133,7 +152,7 @@ class WS {
         const z = Number(data[key][2].toFixed(1));
         data[key] = [x, y, z];
       });
-      log.debug(`Broadcast.ws sending to websocket, data-length: ${JSON.stringify(data).length}`);
+      log.info(`Broadcast.ws sending to websocket, data-length: ${JSON.stringify(data).length}`);
       /**
        * TODO: use messagepack to serialize JSON
        * https://github.com/ygoe/msgpack.js
@@ -280,9 +299,7 @@ class OSC {
 
   parseIncomingDataFor(theBody, theAddressPattern, theArgs) {
     if (theAddressPattern.endsWith(Broadcast.addressSpace.allPositionAbsolute)) {
-      log.debug(
-        `Broadcast.osc.parseIncomingDataFor: parsing ${theAddressPattern} for body-id ${theBody.id}`,
-      );
+      log.debug(`Broadcast.osc.parseIncomingDataFor: parsing ${theAddressPattern} for body-id ${theBody.id}`);
 
       for (let i = 0, n = 0; i < theArgs.length; i += 3, n += 1) {
         /**
@@ -340,16 +357,26 @@ class OSC {
         /** compose arguments for osc message */
         this.#source.forEach((source) => {
           const id = source.id;
-          const oscMessage = this.composeOscMessageFor(id, source, destination);
-          /** send osc message to remote destination */
-          const message = oscMessage.message;
-          const addr = message.address;
-          /** first send out single multi-args messages */
-          this.#udpPort.send(message, destination.address, destination.port);
-          /** then send out single single-arg messages (to unreal) */
-          oscMessage.splitMessages.forEach((m) => {
-            this.#udpPort.send(m, destination.address, destination.port);
-          });
+          let isRequested = true;
+          if (Array.isArray(destination.requestById)) {
+            isRequested = destination.requestById.includes(id);
+          }
+
+          /** only send messages for body-id's that have specifically
+           * been requested (or if request field is undefined). */
+
+          if (isRequested) {
+            const oscMessage = this.composeOscMessageFor(id, source, destination);
+            /** send osc message to remote destination */
+            const message = oscMessage.message;
+            const addr = message.address;
+            /** first send out single multi-args messages */
+            this.#udpPort.send(message, destination.address, destination.port);
+            /** then send out single single-arg messages (to unreal) */
+            oscMessage.splitMessages.forEach((message) => {
+              this.#udpPort.send(message, destination.address, destination.port);
+            });
+          }
         });
       });
   }
@@ -363,9 +390,7 @@ class OSC {
     const isRotationIncluded = dest.format !== undefined ? dest.format === 'xyzuvw' : false;
 
     /** prepare the address pattern for the OscMessage according to the data format */
-    const path = isRotationIncluded
-      ? Broadcast.addressSpace.allAbsolute
-      : Broadcast.addressSpace.allPositionAbsolute;
+    const path = isRotationIncluded ? Broadcast.addressSpace.allAbsolute : Broadcast.addressSpace.allPositionAbsolute;
 
     /** check if a range of joints is specified, otherwise use the default range */
     const range = dest.range || BvhConstants.defaultSkeleton;
@@ -416,9 +441,7 @@ class OSC {
           oscArguments.push({ type: 'f', value: y });
           oscArguments.push({ type: 'f', value: z });
           if (isSplit) {
-            const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
-              Broadcast.addressSpace.positionAbsolute
-            }`;
+            const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${Broadcast.addressSpace.positionAbsolute}`;
 
             splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
             splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
@@ -434,9 +457,7 @@ class OSC {
             oscArguments.push({ type: 'f', value: w });
 
             if (isSplit) {
-              const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
-                Broadcast.addressSpace.rotation
-              }`;
+              const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${Broadcast.addressSpace.rotation}`;
               splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
               splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
               splitMessages.push({ address: `${addr}/z`, args: { type: 'f', value: w } });
