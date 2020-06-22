@@ -25,17 +25,21 @@ export default class Base {
 
     (async () => {
       files.forEach((el) => {
-        const file = path.join(__dirname, '../', dir, el.filePath);
-        const id = el.id || -1;
-        if (id === -1) {
-          log.warn(`app base.loadFilesFromSettings: ${file} without id`);
+        if (el.hasOwnProperty('active') === false || el.active === true) {
+          const file = path.join(__dirname, '../', dir, el.filePath);
+          const id = el.id || -1;
+          if (id === -1) {
+            log.warn(`app base.loadFilesFromSettings: ${file} without id`);
+          }
+          (async () => {
+            return (await BvhParser).readFile({ file, id });
+          })().then((body) => {
+            body.mode = BvhBody.MODE_PLAYBACK;
+            const f = file.split('/').pop();
+            log.info(`✓ Base.loadFilesFromSettings ${f}`);
+            this.source.push(body);
+          });
         }
-        (async () => {
-          return (await BvhParser).readFile({ file, id });
-        })().then((body) => {
-          body.mode = BvhBody.MODE_PLAYBACK;
-          this.source.push(body);
-        });
       });
     })();
   }
@@ -53,9 +57,6 @@ export default class Base {
     });
     const { source, settings } = this;
     new BvhStream({ source, settings });
-
-    const n = this.settings.get.streams.length;
-    log.info(`Set up to stream in ${n} bod${n === 1 ? 'y' : 'ies'}`);
   }
 
   initNetwork() {
