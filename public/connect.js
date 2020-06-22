@@ -30,7 +30,7 @@ function connectAxis(options = {}) {
      * and deserialize data and send as bytes, string
      * formated data is ignored on the server.
      */
-    ws.send(msgpack.serialize({ address: 'register', args: { id: 'axis-web' } })); /** OK */
+    ws.send(msgpack.serialize({ address: 'subscribe', args: { id: 'axis-web' } })); /** OK */
     // ws.send({ register: 'abc', id: 123 }); /** ignored */
   };
 

@@ -1,17 +1,29 @@
 <html>
   <head>
     <title>Render Axis Streamer</title>
+
     <link rel="stylesheet" type="text/css" href="/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
     <script src="/msgpack.js"></script>
   </head>
   <body>
-    <script src="/connect.js"></script>
-    <script src="/sketch.js"></script>
     <div class="settings" id="settings">
-      <h1 id="settings-label"></h1>
-      <pre id="settings-json"></pre>
+      <div class="button">
+        <button id="settings-toggle" onClick="toggle();">
+          <i id="settings-toggle-icon" class="fa fa-chevron-up"></i>
+        </button>
+      </div>
+      <div class="content">
+        <h1 id="settings-label"></h1>
+        <pre id="settings-json"></pre>
+      </div>
     </div>
+
+    <script src="/sketch.js"></script>
+    <script src="/connect.js"></script>
+    <script src="/interface.js"></script>
   </body>
 </html>
