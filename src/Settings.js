@@ -14,8 +14,8 @@ export default class Settings {
   }
 
   /**
-   * the default settings format, use as template.
-   * description element not required.
+   * the default settings format is used when no
+   * external settings file is specified.
    */
   static default = {
     label: 'default-settings',
@@ -25,7 +25,7 @@ export default class Settings {
         address: '0.0.0.0',
         description: `The port and inet address the application
         will be listening on. By default the port should be 5000. 
-        Possible net interface address are 127.0.0.1 for local and 
+        Possible net interface addresses are 127.0.0.1 for local and 
         loopback, the default 0.0.0.0 (can be used to mean anything 
         from accept all IP addresses to the default route when servers
         possess more than one network interface).`,
@@ -51,8 +51,8 @@ export default class Settings {
     },
     load: {
       files: [
-        { filePath: 'storage/bvh/test-load-1.bvh', label: 'default', id: 1 },
-        { filePath: 'storage/bvh/test-load-2.bvh', label: 'default', id: 2 },
+        { filePath: 'storage/bvh/test-load-1.bvh', label: 'default', id: 2, active: true },
+        { filePath: 'storage/bvh/test-load-2.bvh', label: 'default', id: 3, active: true },
       ],
       description: `contains an array of paths to bvh files to load from and then 
         playback. These files should be located inside external. Useful 
@@ -92,14 +92,24 @@ export default class Settings {
         {
           active: true,
           address: '127.0.0.1',
-          format: 'xyz',
-          label: 'local-p5',
           port: 5001,
+          format: 'xyz',
+          label: 'local-5001',
+        },
+        {
+          active: false,
+          address: '127.0.0.1',
+          port: 5001,
+          format: 'xyz',
+          split: true,
+          range: ['Head', 'Hips'],
+          requestById: [1, 2],
+          label: 'local-split-5001',
         },
       ],
-      description: `data is broadcasted over UDP/OSC and over websocket 
-      to a publically available web server, currently this is hosted at 
-      axis-online.glitch.com.`,
+      description: `(osc) data is broadcasted over UDP/OSC and 
+      (web) over websocket to a publically available web server, 
+      currently for example this is hosted at axis-online.glitch.com.`,
     },
   };
 }
