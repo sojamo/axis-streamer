@@ -7,7 +7,7 @@ Data is streamed from Axis Neuron over UDP port 7002. When data arrives and is p
 1. **OSC broadcast**: forward absolute joint positions as OSC messages over UDP to OSC receivers
 2. **WebSocket**: send absolute joint positions to a web-app listening on default port 5080
 
-Alternatively, data can be read and played back from one or more .bvh file (see [app/load.js](app/load.js)).
+Alternatively, data can be read and played back from one or more .bvh files.
 
 ## Installation
 
@@ -32,8 +32,8 @@ movement-project
 ```
 
 1. use the Terminal to cd into the directory where you want your project to live eg. `cd ~/Documents` and create a folder which you want to use as your working directory eg. _movement-project_ with `mkdir movement-project` then change directory with `cd movement-project`
-2. inside directory _movement-project_ a folder structure as outlined above is required.
-3. then clone the axis-streamer repository from https://github.com/sojamo/axis-streamer.git with `git clone https://github.com/sojamo/axis-streamer.git`
+2. inside working directory _movement-project_ a folder structure as outlined above is required.
+3. then clone the axis-streamer repository from https://github.com/sojamo/axis-streamer.git with `git clone https://github.com/sojamo/axis-streamer.git` into the working directory.
 4. `cd` into the repository's root folder `cd axis-streamer`
 5. install project dependencies with running `yarn`
 6. call `yarn run help` for a list of options, or call `yarn run with --mode stream` for streaming data from Axis Neuron (see details below) or use `yarn run with --mode load` to load and playback a .bvh file (files should be located inside folder _external → storage → bvh_), call `yarn run with --mode streamload` to load and stream data simultaneously.
@@ -77,7 +77,7 @@ To stream data from Axis Neuron cd into your working directory and use `yarn run
 
 ### From file
 
-To stream data from file(s) use `yarn run with --mode load`. You need to place a .bvh file named eg. `test.bvh` (you can copy test.bvh located inside folder assets for a start) into folder _external → storage → bvh_ after which you need to update the filePath to the(se) file(s) in your Settings file ([breakdown of settings](https://github.com/sojamo/axis-streamer/wiki/Settings)).
+To stream data from file(s) use `yarn run with --mode load`. You need to place a .bvh file named eg. `test.bvh` (you can **copy** test.bvh located inside folder assets for a start) into folder _external → storage → bvh_ after which you need to update the filePath to the(se) file(s) in your Settings file ([breakdown of settings](https://github.com/sojamo/axis-streamer/wiki/Settings)).
 
 ```
 movement-project
