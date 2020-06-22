@@ -17,11 +17,11 @@
 
 import BvhConstants from './bvh/BvhConstants';
 import express from 'express';
+import * as http from 'http';
+import { log } from './Log';
 import path from 'path';
 import msgpack from '@ygoe/msgpack';
 import * as WebSocket from 'ws';
-import * as http from 'http';
-import { log } from './Log';
 
 export default class WebInterface {
   #settings;
@@ -73,7 +73,7 @@ export default class WebInterface {
 
       const addr = ws._socket.remoteAddress.replace('::ffff:', '');
       const port = ws._socket.remotePort;
-      log.info(`WebInterface: new connection from ${addr}:${port} (${_self.#ws.clients.size})`);
+      log.info(`⇌ WebInterface: new connection from ${addr}:${port} (${_self.#ws.clients.size})`);
 
       ws.on('message', (m) => {
         try {
@@ -85,35 +85,23 @@ export default class WebInterface {
       });
 
       ws.on('close', (m) => {
-        log.info(`WebInterface: connection closed by ${addr}:${port} (${_self.#ws.clients.size})`);
+        log.info(`⚡WebInterface: connection closed by ${addr}:${port} (${_self.#ws.clients.size})`);
         return ws.terminate;
       });
     });
 
-    const heartbeat = setInterval(() => {
-      _self.#ws.clients.forEach(function each(ws) {
-        if (ws.isAlive === false) {
-          console.log('connection list ' + ws + 'terminating.');
-          return ws.terminate();
-        }
-        ws.isAlive = false;
-        ws.ping(() => {});
-      });
-    }, 1000);
-
-    this.#ws.on('close', () => {
-      clearInterval(heartbeat);
-    });
+    this.#ws.on('close', () => {});
 
     server.listen(options.port || 5080, () => {
       const port = server.address().port;
-      log.info(`WebInterface: starting web-server at http://0.0.0.0:${port}`);
+      log.info(`✓ WebInterface: starting web-server at http://0.0.0.0:${port}`);
     });
   }
 
   publish(settings = {}) {
     const range = settings.get.server.web.range || BvhConstants.defaultSkeleton;
     const packet = { address: 'pn', args: [] };
+    /**  schema { address: string, args: [{ id: Number, data: [{ joints: [x, y, z], ... }]}]}  */
 
     /** collect all data from sources */
     this.#source.forEach((body) => {
