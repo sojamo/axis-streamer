@@ -1,6 +1,6 @@
 {
   "name": "axis-streamer",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and WebSocket.",
   "author": {
     "name": "Andreas Schlegel",
