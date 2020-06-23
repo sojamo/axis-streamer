@@ -1,4 +1,4 @@
-import Base from './base';
+import Base from './base.js';
 
 export default class StreamLoad extends Base {
   constructor(options) {

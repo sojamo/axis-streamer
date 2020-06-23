@@ -15,13 +15,13 @@
  *
  */
 
-import BvhConstants from './bvh/BvhConstants';
+import BvhConstants from './bvh/BvhConstants.js';
+import { log } from './Log.js';
 import express from 'express';
-import * as http from 'http';
-import { log } from './Log';
+import http from 'http';
 import path from 'path';
 import msgpack from '@ygoe/msgpack';
-import * as WebSocket from 'ws';
+import WebSocket from 'ws';
 
 export default class WebInterface {
   #settings;
@@ -33,10 +33,11 @@ export default class WebInterface {
 
     const _self = this;
     const app = express();
+    const __dirname = path.resolve();
 
     /** TODO check if this.#settings is valid and not empty. */
-    const publicDir = path.join(__dirname, '../', this.#settings.get.server.web.path.public);
-    const appDir = path.join(__dirname, '../', this.#settings.get.server.web.path.app);
+    const publicDir = path.join(__dirname, './', this.#settings.get.server.web.path.public);
+    const appDir = path.join(__dirname, './', this.#settings.get.server.web.path.app);
 
     app.use(express.json());
     app.use(express.static(publicDir));

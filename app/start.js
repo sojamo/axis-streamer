@@ -1,11 +1,13 @@
-import Load from './load';
-import Stream from './stream';
-import StreamLoad from './streamload';
-import Settings from '../src/Settings';
-import { log } from '../src/Log';
+import Load from './load.js';
+import Stream from './stream.js';
+import StreamLoad from './streamload.js';
+import Settings from '../src/Settings.js';
+import { log } from '../src/Log.js';
+import fs from 'fs';
+import minimist from 'minimist';
 
-const fs = require('fs');
-const argv = require('minimist')(process.argv.slice(2));
+const argv = minimist(process.argv.slice(2));
+
 let settings;
 let isHelp = false;
 

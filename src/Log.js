@@ -3,8 +3,10 @@
  * list of logging levels https://github.com/winstonjs/winston#logging-levels
  *
  */
-const version = require('../package.json').version;
-const winston = require('winston');
+
+import winston from 'winston';
+
+const version = '0.3.2'; //require('../package.json').version;
 const loggingLevel = 'info';
 
 const myformat = winston.format.combine(

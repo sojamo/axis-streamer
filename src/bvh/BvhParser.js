@@ -13,8 +13,8 @@
  *
  */
 
-import BvhBody from './BvhBody';
-import BvhJoint from './BvhJoint';
+import BvhBody from './BvhBody.js';
+import BvhJoint from './BvhJoint.js';
 import { promisify } from 'util';
 import * as fs from 'fs';
 
@@ -146,9 +146,7 @@ export default class BvhParser {
       }
       args.currentLine++;
     }
-    log.warn(
-      `BvhParser.parseJoint: Something strange happend while parsing BVH data. Wrong format?`,
-    );
+    log.warn(`BvhParser.parseJoint: Something strange happend while parsing BVH data. Wrong format?`);
     return joint;
   }
 

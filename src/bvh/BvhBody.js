@@ -1,5 +1,5 @@
-import BvhMatrix from './BvhMatrix';
-import BvhConstants from './BvhConstants';
+import BvhMatrix from './BvhMatrix.js';
+import BvhConstants from './BvhConstants.js';
 
 export default class BvhBody {
   constructor(theId) {
@@ -35,11 +35,11 @@ export default class BvhBody {
     if (this.#owner === BvhBody.owner.SELF) {
       if (this.mode === BvhBody.MODE_PLAYBACK) {
         if (this.#play) {
-          this.#updateFrames();
+          this.updateFrames();
         }
       }
 
-      this.#updateJoint(this.root);
+      this.updateJoint(this.root);
       this.flatten();
     } else {
       // TODO
@@ -47,7 +47,7 @@ export default class BvhBody {
     }
   }
 
-  #updateFrames() {
+  updateFrames() {
     const data = this.getFrame(this.currentFrame);
     const dataLength = data.length;
     /**
@@ -75,11 +75,7 @@ export default class BvhBody {
       }
       this.processIncomingData({ frameIndex: this.currentFrame, channels });
     } else {
-      console.warn(
-        'BvhBody.play(), wrong data-count: should be 354 but is',
-        dataLength,
-        'cant play frame',
-      );
+      console.warn('BvhBody.play(), wrong data-count: should be 354 but is', dataLength, 'cant play frame');
     }
   }
 
@@ -141,7 +137,7 @@ export default class BvhBody {
    *
    * @param {*} theJoint
    */
-  #updateJoint(theJoint) {
+  updateJoint(theJoint) {
     let m = new BvhMatrix();
     m.translate(theJoint.xPosition, theJoint.yPosition, theJoint.zPosition);
 
@@ -182,7 +178,7 @@ export default class BvhBody {
     theJoint.positionAbsolute = BvhBody.invertY(theJoint.positionAbsolute);
 
     if (theJoint.children.length > 0) {
-      theJoint.children.forEach((el) => this.#updateJoint(el));
+      theJoint.children.forEach((el) => this.updateJoint(el));
     } else {
       m.translate(theJoint.xEndOffset, theJoint.yEndOffset, theJoint.zEndOffset);
       theJoint.endPositionAbsolute = m.multFast();
@@ -210,7 +206,7 @@ export default class BvhBody {
   jumpTo(theFrame) {
     // TODO
     this.currentFrame = theFrame;
-    this.#updateFrames();
+    this.updateFrames();
   }
 
   setSpeed() {

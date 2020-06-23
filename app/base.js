@@ -1,10 +1,10 @@
-import Broadcast from '../src/Broadcast';
-import BvhBody from '../src/bvh/BvhBody';
-import BvhParser from '../src/bvh/BvhParser';
-import BvhStream from '../src/bvh/BvhStream';
-import WebInterface from '../src/WebInterface';
+import Broadcast from '../src/Broadcast.js';
+import BvhBody from '../src/bvh/BvhBody.js';
+import BvhParser from '../src/bvh/BvhParser.js';
+import BvhStream from '../src/bvh/BvhStream.js';
+import WebInterface from '../src/WebInterface.js';
+import { log } from '../src/Log.js';
 import path from 'path';
-import { log } from '../src/Log';
 
 export default class Base {
   constructor(settings) {
@@ -20,13 +20,14 @@ export default class Base {
   }
 
   loadFilesFromSettings() {
+    const __dirname = path.resolve();
     const dir = this.settings.get.general.external.dir;
     const files = this.settings.get.load.files;
 
     (async () => {
       files.forEach((el) => {
         if (el.hasOwnProperty('active') === false || el.active === true) {
-          const file = path.join(__dirname, '../', dir, el.filePath);
+          const file = path.join(__dirname, './', dir, el.filePath);
           const id = el.id || -1;
           if (id === -1) {
             log.warn(`app base.loadFilesFromSettings: ${file} without id`);
@@ -70,7 +71,7 @@ export default class Base {
 
   initUpdate() {
     /* stick to a good update-rate of 50 fps if possible (freq.update value=20) */
-    setInterval(this.#pre.bind(this), this.settings.get.general.freq.update);
+    setInterval(this.pre.bind(this), this.settings.get.general.freq.update);
     /**
      * the second interval takes care of
      * broadcasting message. here however we
@@ -80,19 +81,19 @@ export default class Base {
      * this is to prevent the network or receiver
      * from overloading.
      */
-    setInterval(this.#broadcast.bind(this), this.settings.get.general.freq.broadcast);
+    setInterval(this.broadcast.bind(this), this.settings.get.general.freq.broadcast);
   }
 
   update() {
     /** to be overriden by inheriting class */
   }
 
-  #pre() {
+  pre() {
     this.update();
     this.source.forEach((body) => body.update());
   }
 
-  #broadcast() {
+  broadcast() {
     /** broadcast to the web */
     this.web.publish(this.settings);
     /** broacast to OSC channels */

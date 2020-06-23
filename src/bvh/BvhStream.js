@@ -10,9 +10,10 @@
  *
  */
 
-import BvhConstants from './BvhConstants';
-import Settings from '../Settings';
-import { log } from '../Log';
+import BvhConstants from './BvhConstants.js';
+import Settings from '../Settings.js';
+import { log } from '../Log.js';
+import dgram from 'dgram';
 
 export default class BvhStream {
   constructor(options = {}) {
@@ -23,9 +24,8 @@ export default class BvhStream {
   }
 
   initSocket(thePort) {
-    const dgram = require('dgram');
+    // const dgram = require('dgram');
     const client = dgram.createSocket('udp4');
-
     client.on('error', (err) => {
       log.error(`BvhStream.initSocket: server error ${err.stack}`);
       client.close();

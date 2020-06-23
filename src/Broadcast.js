@@ -5,13 +5,15 @@
  *
  */
 
-import BvhBody from './bvh/BvhBody';
-import BvhParser from './bvh/BvhParser';
-import BvhConstants from './bvh/BvhConstants';
-import WebInterface from './WebInterface';
-import * as osc from 'osc';
-import { log } from './Log';
-import Settings from './Settings';
+import BvhBody from './bvh/BvhBody.js';
+import BvhParser from './bvh/BvhParser.js';
+import BvhConstants from './bvh/BvhConstants.js';
+import WebInterface from './WebInterface.js';
+import osc from 'osc';
+import os from 'os';
+import ws from 'ws';
+import { log } from './Log.js';
+import Settings from './Settings.js';
 
 export default class Broadcast {
   #osc;
@@ -110,7 +112,7 @@ class WS {
     if (this.#settings.get.broadcast?.web?.active || false) {
       const host = 'axis-online.glitch.me';
       const url = 'wss://' + host;
-      const WebSocket = require('ws'); /** https://github.com/websockets/ws */
+      // const WebSocket = require('ws'); /** https://github.com/websockets/ws */
 
       this.#socket = new WebSocket(url);
 
@@ -186,10 +188,10 @@ class OSC {
     this.#source = options.source || []; /** ref to array that stores BvhBody(s) in main script */
     (async () => {
       return BvhParser.build();
-    })().then((parser) => this.#init(parser));
+    })().then((parser) => this.init(parser));
   }
 
-  #init(parser) {
+  init(parser) {
     const _self = this;
 
     /** start OSC over UDP */
@@ -475,9 +477,8 @@ class OSC {
   }
 
   getIPAddresses() {
-    let os = require('os'),
-      interfaces = os.networkInterfaces(),
-      ipAddresses = [];
+    let interfaces = os.networkInterfaces();
+    let ipAddresses = [];
 
     for (let deviceName in interfaces) {
       let addresses = interfaces[deviceName];
