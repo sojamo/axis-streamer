@@ -116,6 +116,7 @@ export default class BvhBody {
    * @param {*} theData
    */
   processIncomingData(theData) {
+    // console.log(theData);
     // theData = {frameIndex, channels}
     this.flatten();
     Object.keys(theData.channels).forEach((index) => {

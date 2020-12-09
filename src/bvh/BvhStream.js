@@ -123,6 +123,7 @@ export default class BvhStream {
         /** check the incoming data's IP address against the
          * registered IP (as identifier) to then process data.
          */
+        // REMINDER: This may have broken the ability for multiple streams to be sent
         if (body.address === theIpAddress) {
           body.processIncomingData({ frameIndex, channels });
         }

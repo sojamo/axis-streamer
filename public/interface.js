@@ -11,3 +11,12 @@ function toggle() {
 }
 
 toggle();
+
+function addStream() {
+  const streamName = document.getElementById('stream-name').value;
+  const streamIp = document.getElementById('stream-ip').value;
+
+  console.log(streamName);
+  console.log(streamIp);
+  connectAxis();
+}

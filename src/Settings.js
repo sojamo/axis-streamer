@@ -66,6 +66,13 @@ export default class Settings {
         label: 'local',
         type: 'axis-neuron',
       },
+      {
+        active: true,
+        id: 2,
+        address: '172.17.0.1',
+        label: 'local',
+        type: 'axis-neuron',
+      },
     ],
     server: {
       web: {

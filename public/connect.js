@@ -17,6 +17,8 @@ function connectAxis(options = {}) {
       ? 'wss://' + window.location.hostname + ':' + port
       : 'ws://' + window.location.hostname + ':' + port;
 
+  // const url = `ws://143.110.161.85:${port}`;
+
   /** start websocket and connect to url */
   const ws = new WebSocket(url);
 
@@ -40,6 +42,7 @@ function connectAxis(options = {}) {
    * and must be included locally (on the server).
    */
   ws.onmessage = function (ev) {
+    // console.log(ev);
     const packet = msgpack.deserialize(ev.data);
     const { address, args } = packet;
     if (address === 'pn') {

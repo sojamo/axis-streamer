@@ -64,6 +64,7 @@ export default class WebInterface {
     this.#ws = new WebSocket.Server({ server });
 
     this.#ws.on('connection', (ws) => {
+      console.log('connected');
       const bytes = msgpack.serialize({ address: 'settings', args: _self.#settings.get });
       ws.send(bytes);
 
@@ -93,6 +94,14 @@ export default class WebInterface {
 
     this.#ws.on('close', () => {});
 
+    // REMINDER: Adding new route for handling the adding of streams
+    // ////////////////////////////////////////////////////////////////////////
+    app.post('/add-stream', (req, res) => {
+      console.log('adding stream');
+      res.send('hello');
+    });
+    // ////////////////////////////////////////////////////////////////////////
+
     server.listen(options.port || 5080, () => {
       const port = server.address().port;
       log.info(`✓ WebInterface: starting web-server at http://0.0.0.0:${port}`);
@@ -107,6 +116,8 @@ export default class WebInterface {
     /** collect all data from sources */
     this.#source.forEach((body) => {
       const id = body.id;
+      // console.log(JSON.stringify(body.flat['RightUpLeg']));
+      // console.log(JSON.stringify(body.flat['RightUpLeg'].positionAbsolute));
       const data = WebInterface.getJsonFor(body, range);
       packet.args.push({ id, data });
     });
