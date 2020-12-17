@@ -1,25 +1,41 @@
 {
-  "name": "axis-streamer",
+  "private": true,
+  "workspaces": [
+    "client"
+  ],
+  "name": "gold-streamer",
   "version": "0.3.2",
   "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and WebSocket.",
   "author": {
     "name": "Andreas Schlegel",
     "url": "http://www.sojamo.de"
   },
-  "private": true,
+  "contributors": [
+    {
+      "name": "Oliver Winks",
+      "url": "https://paperplane.software"
+    }
+  ],
   "main": "app/start.js",
   "type": "module",
   "bin": {
     "axis-streamer": "bin/axis-streamer"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "help": "npx babel-node ./app/start.js --help",
-    "with": "npx babel-node ./app/start.js"
+    "client": "yarn workspace client",
+    "client:build": "yarn client build",
+    "client:serve": "yarn client serve",
+
+    "server:test": "echo \"Error: no test specified\" && exit 1",
+    "server:help": "yarn node ./app/start.js --help",
+    "server:with": "yarn node ./app/start.js",
+    "server:stream": "yarn run server:with --mode stream",
+
+    "dev:stream": "concurrently \"yarn run client:serve\" \"yarn run server:stream\""
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sojamo/axis-streamer.git"
+    "url": "https://github.com/paperplanesoftware/gold-streamer.git"
   },
   "license": "ISC",
   "dependencies": {
@@ -31,14 +47,7 @@
     "ws": "^7.2.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.9.0",
-    "@babel/node": "^7.8.7",
-    "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/plugin-proposal-private-methods": "^7.8.3",
-    "@babel/preset-env": "^7.9.5",
-    "@babel/preset-react": "^7.9.4",
-    "babel-loader": "^8.1.0",
-    "prettier": "2.0.5",
-    "webpack": "^4.43.0"
+    "concurrently": "^5.3.0",
+    "prettier": "2.0.5"
   }
 }
