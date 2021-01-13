@@ -1,11 +1,11 @@
 <template>
   <div id="app">
     <settings />
-    <streams />
+    <sources />
 
     <b-nav vertical pills>
-      <b-nav-item v-b-toggle.settings-sidebar>View</b-nav-item>
-      <b-nav-item v-b-toggle.streams-sidebar>Streams</b-nav-item>
+      <b-nav-item v-b-toggle.settings-sidebar>Settings</b-nav-item>
+      <b-nav-item v-b-toggle.sources-sidebar>Sources</b-nav-item>
     </b-nav>
 
     <stage />
@@ -16,13 +16,13 @@
 import { defineComponent } from '@vue/composition-api';
 import Settings from './components/Settings.vue';
 import Stage from './components/Stage.vue';
-import Streams from './components/Streams.vue';
+import Sources from './components/Sources.vue';
 
 export default defineComponent({
   components: {
     Settings,
     Stage,
-    Streams,
+    Sources,
   },
 });
 </script>

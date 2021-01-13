@@ -2,7 +2,7 @@
 
 NOTES.md
 test-dev/
-public
+./public/
 
 ### Node.gitignore 
 # https://github.com/github/gitignore

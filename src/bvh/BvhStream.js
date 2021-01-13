@@ -32,12 +32,15 @@ export default class BvhStream {
     });
 
     client.on('message', (msg, rinfo) => {
+      console.log(rinfo);
       this.parseBuffer(msg, rinfo.address);
     });
 
     client.on('listening', () => {
       const address = client.address();
-      log.info(`✓ BvhStream.initSocket: listening for stream from ${address.address}:${address.port}`);
+      log.info(
+        `✓ BvhStream.initSocket: listening for stream from ${address.address}:${address.port}`,
+      );
     });
 
     client.bind(thePort);

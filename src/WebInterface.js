@@ -14,12 +14,14 @@
  *
  *
  */
-
+import BvhBody from '../src/bvh/BvhBody.js';
 import BvhConstants from './bvh/BvhConstants.js';
+import BvhParser from '../src/bvh/BvhParser.js';
 import { log } from './Log.js';
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import cors from 'cors';
 import msgpack from '@ygoe/msgpack';
 import WebSocket from 'ws';
 
@@ -39,8 +41,13 @@ export default class WebInterface {
     const publicDir = path.join(__dirname, './', this.#settings.get.server.web.path.public);
     const appDir = path.join(__dirname, './', this.#settings.get.server.web.path.app);
 
+    var corsOptions = {
+      origin: 'http://localhost:8080',
+    };
+
     app.use(express.json());
     app.use(express.static(publicDir));
+    app.use(cors(corsOptions));
 
     const server = http.createServer(app);
 
@@ -64,7 +71,6 @@ export default class WebInterface {
     this.#ws = new WebSocket.Server({ server });
 
     this.#ws.on('connection', (ws) => {
-      console.log('connected');
       const bytes = msgpack.serialize({ address: 'settings', args: _self.#settings.get });
       ws.send(bytes);
 
@@ -87,18 +93,40 @@ export default class WebInterface {
       });
 
       ws.on('close', (m) => {
-        log.info(`⚡WebInterface: connection closed by ${addr}:${port} (${_self.#ws.clients.size})`);
+        log.info(
+          `⚡WebInterface: connection closed by ${addr}:${port} (${_self.#ws.clients.size})`,
+        );
         return ws.terminate;
       });
     });
 
     this.#ws.on('close', () => {});
 
-    // REMINDER: Adding new route for handling the adding of streams
+    // REMINDER: Custom routes
     // ////////////////////////////////////////////////////////////////////////
-    app.post('/add-stream', (req, res) => {
-      console.log('adding stream');
-      res.send('hello');
+    app.get('/streams', (req, res) => {
+      res.send(this.#source.map((s) => ({ id: s.id, address: s.address })));
+    });
+
+    app.post('/stream', (req, res) => {
+      (async () => {
+        return (await BvhParser).readFile();
+      })()
+        .then((body) => {
+          // increment the stream id
+          const id = this.#source.length + 1;
+
+          body.id = id;
+          body.address = req.body.address;
+          body.mode = BvhBody.MODE_STREAM;
+          this.#source.push(body);
+
+          res.sendStatus(200);
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(500).send('Something went wrong');
+        });
     });
     // ////////////////////////////////////////////////////////////////////////
 
