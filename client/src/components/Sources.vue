@@ -43,13 +43,17 @@
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import axios from 'axios';
 
+const BASE_URL = process.env.VUE_APP_BASE_URL;
+
 export default defineComponent({
   setup(props, { root }) {
+    console.log(BASE_URL);
+
     // Get streams
     const streams = ref([]);
 
     function getStreams() {
-      return axios.get('http://localhost:5080/streams').then(res => {
+      return axios.get(`${BASE_URL}/streams`).then(res => {
         streams.value = res.data;
       });
     }
@@ -61,7 +65,7 @@ export default defineComponent({
 
     function addStream() {
       return axios
-        .post(`http://localhost:5080/stream`, { address: ip.value })
+        .post(`${BASE_URL}/stream`, { address: ip.value })
         .then(_ => getStreams())
         .catch(err => {
           root.$bvToast.toast(err.message, { title: 'Oops', variant: 'danger' });
