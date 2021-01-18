@@ -42,7 +42,7 @@ export default class WebInterface {
     const appDir = path.join(__dirname, './', this.#settings.get.server.web.path.app);
 
     var corsOptions = {
-      origin: 'http://localhost:8080',
+      origin: '*',
     };
 
     app.use(express.json());
