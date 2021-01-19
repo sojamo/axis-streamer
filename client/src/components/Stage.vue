@@ -1,5 +1,5 @@
 <template>
-  <div class="stage-container d-flex justify-content-center align-items-center w-100">
+  <div class="stage-container d-flex justify-content-center align-items-center h-100">
     <div id="sketch" ref="sketchTemplate" />
   </div>
 </template>
@@ -22,9 +22,17 @@ interface ConnectAxisOptions {
 }
 
 export default defineComponent({
-  setup(props) {
-    const body: any = {};
+  props: {
+    body: {
+      type: Object,
+      required: true,
+    },
+  },
+
+  setup(props, { emit }) {
     const sketchTemplate: Ref<HTMLElement | undefined> = ref(undefined);
+    let isMove = false;
+
     onMounted(() => {
       const sketch = (g: p5.Graphics): any => {
         let font: p5.Font,
@@ -42,7 +50,11 @@ export default defineComponent({
         };
 
         g.setup = () => {
-          g.createCanvas(sketchTemplate.value?.clientWidth ?? 0, sketchTemplate.value?.clientHeight ?? 0, g.WEBGL);
+          g.createCanvas(
+            sketchTemplate.value?.clientWidth ?? 0,
+            sketchTemplate.value?.clientHeight ?? 0,
+            g.WEBGL,
+          );
           connectAxis({ target: updateAxisData });
           g.noStroke();
           g.textFont(font);
@@ -71,8 +83,8 @@ export default defineComponent({
           let cs = 200;
           g.translate((-cs * cx) / 2, (-cs * cy) / 2);
 
-          const c0 = 10;
-          const c1 = 20;
+          const c0 = 30;
+          const c1 = 70;
           for (let x = 0; x < cx; x++) {
             for (let y = 0; y < cy; y++) {
               g.fill(255, x % 2 === 0 ? (y % 2 === 0 ? c0 : c1) : y % 2 === 0 ? c1 : c0);
@@ -83,13 +95,13 @@ export default defineComponent({
           g.pop();
 
           /** Bodies */
-          Object.keys(body).forEach(id => {
+          Object.keys(props.body).forEach(id => {
             g.fill(255);
             g.push();
-            if (body[id].now['Head']) {
+            if (props.body[id].now['Head']) {
               /** render id */
               g.push();
-              let v = body[id].now['Head'];
+              let v = props.body[id].now['Head'];
               g.translate(v[0], v[1], v[2]);
               g.translate(0, -50, 0);
               g.stroke(255, 100);
@@ -101,9 +113,9 @@ export default defineComponent({
             }
 
             /** render  joints */
-            Object.keys(body[id].now).forEach(joint => {
+            Object.keys(props.body[id].now).forEach(joint => {
               g.push();
-              let v = body[id].now[joint];
+              let v = props.body[id].now[joint];
               g.translate(v[0], v[1], v[2]);
               g.sphere(2, 4, 4);
               g.pop();
@@ -118,6 +130,41 @@ export default defineComponent({
             ry += (nry - ry) * vel;
           });
         };
+
+        g.mouseDragged = evt => {
+          if (isMove) {
+            // move along x and y axis
+            nx += g.mouseX - g.pmouseX;
+            ny += g.mouseY - g.pmouseY;
+          } else {
+            // rotate around Y-axis
+            nry += (g.mouseX - g.pmouseX) * 0.02;
+          }
+        };
+
+        g.mouseWheel = evt => {
+          // event.preventDefault();
+          nz += evt.delta;
+          return false;
+        };
+
+        g.keyPressed = () => {
+          /* check if Shift (keyCode 16) key is pressed
+           * if so, we are then able to move the body
+           * with a mouseDrag, otherwise the mousedrag
+           * will affect the rotation of the body,
+           * see mouseDragged() below.
+           */
+          isMove = g.keyCode == 16 ? true : isMove;
+        };
+
+        g.keyReleased = () => {
+          isMove = g.keyCode == 16 ? false : isMove;
+        };
+
+        g.windowResized = () => {
+          g.resizeCanvas(g.windowWidth, g.windowHeight);
+        };
       };
 
       const myp5 = new p5(sketch, sketchTemplate.value);
@@ -131,8 +178,8 @@ export default defineComponent({
        * xyz coordinates.
        */
       const vel = 0.1;
-      Object.keys(body).forEach(id => {
-        const sk = body[id];
+      Object.keys(props.body).forEach(id => {
+        const sk = props.body[id];
         Object.keys(sk.soon).forEach(joint => {
           sk.now[joint][0] += (sk.soon[joint][0] - sk.now[joint][0]) * vel;
           sk.now[joint][1] += (sk.soon[joint][1] - sk.now[joint][1]) * vel;
@@ -209,8 +256,15 @@ export default defineComponent({
 
     function updateAxisData(theMessage: Message) {
       const { id, data } = theMessage;
-      body[id] = body[id] === undefined ? { now: data, soon: data } : body[id];
-      body[id].soon = data;
+
+      if (props.body[id] === undefined) {
+        emit('update:body', { ...props.body, [id]: { now: data, soon: data } });
+      } else {
+        props.body[id].soon = data;
+      }
+
+      // props.body[id] = props.body[id] === undefined ? { now: data, soon: data } : props.body[id];
+      // props.body[id].soon = data;
     }
 
     return {

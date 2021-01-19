@@ -45,20 +45,20 @@ export default class Base {
     })();
   }
 
-  initStreamsFromSettings() {
-    this.settings.get.streams.forEach((stream) => {
-      (async () => {
-        return (await BvhParser).readFile();
-      })().then((body) => {
-        body.id = stream.id;
-        body.address = stream.address;
-        body.mode = BvhBody.MODE_STREAM;
-        this.source.push(body);
-      });
-    });
-    const { source, settings } = this;
-    new BvhStream({ source, settings });
-  }
+  // initStreamsFromSettings() {
+  //   this.settings.get.streams.forEach((stream) => {
+  //     (async () => {
+  //       return (await BvhParser).readFile();
+  //     })().then((body) => {
+  //       body.id = stream.id;
+  //       body.address = stream.address;
+  //       body.mode = BvhBody.MODE_STREAM;
+  //       this.source.push(body);
+  //     });
+  //   });
+  //   const { source, settings } = this;
+  //   new BvhStream({ source, settings });
+  // }
 
   initNetwork() {
     /* initialise networking components */
@@ -67,6 +67,7 @@ export default class Base {
     this.broadcastFor = new Broadcast({ source, settings });
     this.broadcastFor.osc = {};
     this.broadcastFor.ws = {};
+    const bvhStream = new BvhStream({ source, settings });
   }
 
   initUpdate() {

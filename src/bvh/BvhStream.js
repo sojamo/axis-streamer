@@ -24,7 +24,6 @@ export default class BvhStream {
   }
 
   initSocket(thePort) {
-    // const dgram = require('dgram');
     const client = dgram.createSocket('udp4');
     client.on('error', (err) => {
       log.error(`BvhStream.initSocket: server error ${err.stack}`);
@@ -32,7 +31,6 @@ export default class BvhStream {
     });
 
     client.on('message', (msg, rinfo) => {
-      console.log(rinfo);
       this.parseBuffer(msg, rinfo.address);
     });
 
@@ -137,4 +135,5 @@ export default class BvhStream {
   #collect;
   #settings;
   #source;
+  #knownSources;
 }

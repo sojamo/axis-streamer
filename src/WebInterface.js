@@ -22,6 +22,7 @@ import express from 'express';
 import http from 'http';
 import path from 'path';
 import cors from 'cors';
+import fileUpload from 'express-fileupload';
 import msgpack from '@ygoe/msgpack';
 import WebSocket from 'ws';
 
@@ -104,6 +105,8 @@ export default class WebInterface {
 
     // REMINDER: Custom routes
     // ////////////////////////////////////////////////////////////////////////
+    app.use(fileUpload());
+
     app.get('/streams', (req, res) => {
       res.send(this.#source.map((s) => ({ id: s.id, address: s.address })));
     });
@@ -127,6 +130,22 @@ export default class WebInterface {
           console.log(err);
           res.status(500).send('Something went wrong');
         });
+    });
+
+    app.delete('/stream/:id', (req, res) => {
+      const index = this.#source.findIndex((src) => src.id === req.params.id);
+      if (index) {
+        this.#source.splice(index, 1);
+        res.sendStatus(200);
+      }
+
+      res.status(400).send(`Stream with id ${req.params.id} not found.`);
+    });
+
+    app.post('/upload', (req, res) => {
+      if (req.files.bvh) {
+        console.log(bvh);
+      }
     });
     // ////////////////////////////////////////////////////////////////////////
 

@@ -58,22 +58,22 @@ export default class Settings {
         playback. These files should be located inside external. Useful 
         when developing, testing or when there is no live-stream available.`,
     },
-    streams: [
-      {
-        active: true,
-        id: 1,
-        address: '127.0.0.1',
-        label: 'local',
-        type: 'axis-neuron',
-      },
-      {
-        active: true,
-        id: 2,
-        address: '172.17.0.1',
-        label: 'local',
-        type: 'axis-neuron',
-      },
-    ],
+    // streams: [
+    //   {
+    //     active: true,
+    //     id: 1,
+    //     address: '127.0.0.1',
+    //     label: 'local',
+    //     type: 'axis-neuron',
+    //   },
+    //   {
+    //     active: true,
+    //     id: 2,
+    //     address: '172.17.0.1',
+    //     label: 'local',
+    //     type: 'axis-neuron',
+    //   },
+    // ],
     server: {
       web: {
         path: {

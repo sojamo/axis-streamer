@@ -6,6 +6,6 @@ export default class Stream extends Base {
   }
 
   async init() {
-    this.initStreamsFromSettings();
+    // this.initStreamsFromSettings();
   }
 }
