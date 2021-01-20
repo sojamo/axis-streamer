@@ -142,6 +142,7 @@ export default defineComponent({
           }
         };
 
+        //@ts-ignore
         g.mouseWheel = evt => {
           // event.preventDefault();
           nz += evt.delta;
