@@ -1,4 +1,4 @@
-import Base from './base.js';
+import Base from '../src/GoldStreamer.js';
 
 export default class Load extends Base {
   constructor(options) {

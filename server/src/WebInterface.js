@@ -14,9 +14,9 @@
  *
  *
  */
-import BvhBody from '../src/bvh/BvhBody.js';
+import BvhBody from './bvh/BvhBody.js';
 import BvhConstants from './bvh/BvhConstants.js';
-import BvhParser from '../src/bvh/BvhParser.js';
+import BvhParser from './bvh/BvhParser.js';
 import { log } from './Log.js';
 import express from 'express';
 import http from 'http';

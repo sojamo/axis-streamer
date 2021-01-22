@@ -17,7 +17,6 @@
       "url": "https://paperplane.software"
     }
   ],
-  "type": "module",
   "scripts": {
     "client": "yarn workspace client",
     "server": "yarn workspace server"

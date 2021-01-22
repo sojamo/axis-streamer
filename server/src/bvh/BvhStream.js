@@ -135,5 +135,4 @@ export default class BvhStream {
   #collect;
   #settings;
   #source;
-  #knownSources;
 }
