@@ -1,0 +1,24 @@
+{
+    "name": "server",
+    "version": "0.1.0",
+    "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and WebSocket.",
+    "scripts": {
+        "help": "yarn node ./app/start.js --help",
+        "with": "yarn node ./app/start.js"
+    },
+    "dependencies": {
+        "@ygoe/msgpack": "^1.0.2",
+        "arg": "^4.1.3",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
+        "express-fileupload": "^1.2.1",
+        "minimist": "^1.2.5",
+        "osc": "2.4.1",
+        "winston": "^3.2.1",
+        "ws": "^7.2.5"
+      },
+      "devDependencies": {
+        "concurrently": "^5.3.0",
+        "prettier": "2.0.5"
+      }
+}

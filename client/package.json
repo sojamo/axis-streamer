@@ -1,6 +1,7 @@
 {
   "name": "client",
   "version": "0.1.0",
+  "description": "Frontend for the gold streamer server.",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
