@@ -5,11 +5,13 @@ import BvhStream from './bvh/BvhStream.js';
 import WebInterface from './WebInterface.js';
 import { log } from './Log.js';
 import path from 'path';
+import { BehaviorSubject } from 'rxjs';
 
 export default class GoldStreamer {
   constructor(settings) {
     this.settings = settings;
-    this.source = [];
+    this.source = new BehaviorSubject([]);
+    this.source.asObservable().subscribe((s) => console.log(s));
     this.initNetwork();
     this.initUpdate();
   }
@@ -72,7 +74,7 @@ export default class GoldStreamer {
 
   pre() {
     this.update();
-    this.source.forEach((body) => body.update());
+    this.source.value.forEach((body) => body.update());
   }
 
   broadcast() {

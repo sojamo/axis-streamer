@@ -22,12 +22,12 @@ export default class Broadcast {
   #ws;
 
   constructor(options) {
-    this.#source = options.source || [];
+    this.#source = options.source;
     this.#settings = options.settings || {};
   }
 
   set osc(options) {
-    options.source = options.source || this.#source;
+    options.source = /*options.source || */ this.#source; // REMINDER: Surely you MUST use the source observable this.#source. Any other source list won't get updated as new sources are added
     options.settings = options.settings || this.#settings;
     this.#osc = new OSC(options);
   }
@@ -40,7 +40,7 @@ export default class Broadcast {
   }
 
   set ws(options) {
-    options.source = options.source || this.#source;
+    options.source = /*options.source || */ this.#source;
     options.settings = options.settings || this.#settings;
     this.#ws = new WS(options);
   }
@@ -87,7 +87,7 @@ export default class Broadcast {
 
 class WS {
   constructor(options) {
-    this.#source = options.source || []; /* ref to array that stores BvhBody(s) in main script */
+    this.#source = options.source; /* ref to array that stores BvhBody(s) in main script */
     this.#settings = options.settings || {};
 
     const _self = this;
@@ -131,7 +131,9 @@ class WS {
       };
 
       this.#socket.onerror = (err) => {
-        log.warn(`Broadcast.ws: can't establish connection with ${err.target.url}, host might be down? ${err.message}`);
+        log.warn(
+          `Broadcast.ws: can't establish connection with ${err.target.url}, host might be down? ${err.message}`,
+        );
       };
     } else {
       log.info(`⍻ Broadcast.ws: sending data to remote server not active`);
@@ -142,7 +144,7 @@ class WS {
     // const range = BvhConstants.defaultSkeleton;
     const range = BvhConstants.reducedSkeleton;
 
-    this.#source.forEach((body) => {
+    this.#source.value.forEach((body) => {
       const id = body.id;
       const data = WebInterface.getJsonFor(body, range);
       // this.#ws.sockets.emit('pn', { id, data });
@@ -185,7 +187,7 @@ class OSC {
      * prevent errors and Settings are set to the default Settings.
      */
     this.#settings = options.settings || new Settings(Settings.default);
-    this.#source = options.source || []; /** ref to array that stores BvhBody(s) in main script */
+    this.#source = options.source; /** ref to array that stores BvhBody(s) in main script */
     (async () => {
       return BvhParser.build();
     })().then((parser) => this.init(parser));
@@ -246,13 +248,13 @@ class OSC {
 
       /** get the remote IP address and assign to BvhBody */
       const remoteAddress = rinfo.address;
-      const n = this.#source.length;
+      const n = this.#source.value.length;
       log.debug(`got message from id ${id} @ ${remoteAddress} registered bodies: ${n}`);
 
       let body;
 
       /* check if a body matches the id received */
-      this.#source.some((el) => {
+      this.#source.value.some((el) => {
         const isMatch = el.id === id;
         if (isMatch) {
           body = el;
@@ -266,7 +268,7 @@ class OSC {
         body = parser.fromTemplate({ id });
         body.owner = BvhBody.owner.OTHER;
         body.ip = remoteAddress;
-        this.#source.push(body);
+        this.#source.next([...this.#source, body]);
       }
 
       /** now forward message details for parsing */
@@ -301,7 +303,9 @@ class OSC {
 
   parseIncomingDataFor(theBody, theAddressPattern, theArgs) {
     if (theAddressPattern.endsWith(Broadcast.addressSpace.allPositionAbsolute)) {
-      log.debug(`Broadcast.osc.parseIncomingDataFor: parsing ${theAddressPattern} for body-id ${theBody.id}`);
+      log.debug(
+        `Broadcast.osc.parseIncomingDataFor: parsing ${theAddressPattern} for body-id ${theBody.id}`,
+      );
 
       for (let i = 0, n = 0; i < theArgs.length; i += 3, n += 1) {
         /**
@@ -357,7 +361,7 @@ class OSC {
       .filter((destination) => destination.active)
       .forEach((destination) => {
         /** compose arguments for osc message */
-        this.#source.forEach((source) => {
+        this.#source.value.forEach((source) => {
           const id = source.id;
           let isRequested = true;
           if (Array.isArray(destination.requestById)) {
@@ -392,7 +396,9 @@ class OSC {
     const isRotationIncluded = dest.format !== undefined ? dest.format === 'xyzuvw' : false;
 
     /** prepare the address pattern for the OscMessage according to the data format */
-    const path = isRotationIncluded ? Broadcast.addressSpace.allAbsolute : Broadcast.addressSpace.allPositionAbsolute;
+    const path = isRotationIncluded
+      ? Broadcast.addressSpace.allAbsolute
+      : Broadcast.addressSpace.allPositionAbsolute;
 
     /** check if a range of joints is specified, otherwise use the default range */
     const range = dest.range || BvhConstants.defaultSkeleton;
@@ -443,7 +449,9 @@ class OSC {
           oscArguments.push({ type: 'f', value: y });
           oscArguments.push({ type: 'f', value: z });
           if (isSplit) {
-            const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${Broadcast.addressSpace.positionAbsolute}`;
+            const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
+              Broadcast.addressSpace.positionAbsolute
+            }`;
 
             splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: x } });
             splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: y } });
@@ -459,7 +467,9 @@ class OSC {
             oscArguments.push({ type: 'f', value: w });
 
             if (isSplit) {
-              const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${Broadcast.addressSpace.rotation}`;
+              const addr = `/pn/${id}${Broadcast.addressSpace[`${el1}End`]}${
+                Broadcast.addressSpace.rotation
+              }`;
               splitMessages.push({ address: `${addr}/x`, args: { type: 'f', value: u } });
               splitMessages.push({ address: `${addr}/y`, args: { type: 'f', value: v } });
               splitMessages.push({ address: `${addr}/z`, args: { type: 'f', value: w } });

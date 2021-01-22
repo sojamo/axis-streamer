@@ -50,6 +50,7 @@ function connectAxis(options = {}) {
         target(el);
       });
     }
+    // REMINDER: This should be listened for in the new UI
     if (address === 'settings') {
       console.log(args);
       document.getElementById('settings-label').innerHTML = args.label;
