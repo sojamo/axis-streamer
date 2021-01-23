@@ -18,36 +18,36 @@ import Settings from './Settings.js';
 export default class Broadcast {
   #osc;
   #settings;
-  #source;
+  #sources;
   #ws;
 
   constructor(options) {
-    this.#source = options.source;
+    this.#sources = options.sources;
     this.#settings = options.settings || {};
   }
 
   set osc(options) {
-    options.source = /*options.source || */ this.#source; // REMINDER: Surely you MUST use the source observable this.#source. Any other source list won't get updated as new sources are added
+    options.sources = /*options.sources || */ this.#sources; // REMINDER: Surely you MUST use the sources observable this.#sources. Any other sources list won't get updated as new sources are added
     options.settings = options.settings || this.#settings;
     this.#osc = new OSC(options);
   }
 
   get osc() {
     if (this.#osc === undefined) {
-      this.#osc = new OSC({ source: this.#source, settings: this.#settings });
+      this.#osc = new OSC({ sources: this.#sources, settings: this.#settings });
     }
     return this.#osc;
   }
 
   set ws(options) {
-    options.source = /*options.source || */ this.#source;
+    options.sources = /*options.sources || */ this.#sources;
     options.settings = options.settings || this.#settings;
     this.#ws = new WS(options);
   }
 
   get ws() {
     if (this.#ws === undefined) {
-      this.#ws = new WS({ source: this.#source, settings: this.#settings });
+      this.#ws = new WS({ sources: this.#sources, settings: this.#settings });
     }
     return this.#ws;
   }
@@ -87,7 +87,7 @@ export default class Broadcast {
 
 class WS {
   constructor(options) {
-    this.#source = options.source; /* ref to array that stores BvhBody(s) in main script */
+    this.#sources = options.sources; /* ref to array that stores BvhBody(s) in main script */
     this.#settings = options.settings || {};
 
     const _self = this;
@@ -144,7 +144,7 @@ class WS {
     // const range = BvhConstants.defaultSkeleton;
     const range = BvhConstants.reducedSkeleton;
 
-    this.#source.value.forEach((body) => {
+    this.#sources.value.forEach((body) => {
       const id = body.id;
       const data = WebInterface.getJsonFor(body, range);
       // this.#ws.sockets.emit('pn', { id, data });
@@ -169,7 +169,7 @@ class WS {
 
   #settings;
   #socket;
-  #source;
+  #sources;
 }
 
 /**
@@ -187,7 +187,7 @@ class OSC {
      * prevent errors and Settings are set to the default Settings.
      */
     this.#settings = options.settings || new Settings(Settings.default);
-    this.#source = options.source; /** ref to array that stores BvhBody(s) in main script */
+    this.#sources = options.sources; /** ref to array that stores BvhBody(s) in main script */
     (async () => {
       return BvhParser.build();
     })().then((parser) => this.init(parser));
@@ -248,13 +248,13 @@ class OSC {
 
       /** get the remote IP address and assign to BvhBody */
       const remoteAddress = rinfo.address;
-      const n = this.#source.value.length;
+      const n = this.#sources.value.length;
       log.debug(`got message from id ${id} @ ${remoteAddress} registered bodies: ${n}`);
 
       let body;
 
       /* check if a body matches the id received */
-      this.#source.value.some((el) => {
+      this.#sources.value.some((el) => {
         const isMatch = el.id === id;
         if (isMatch) {
           body = el;
@@ -268,7 +268,7 @@ class OSC {
         body = parser.fromTemplate({ id });
         body.owner = BvhBody.owner.OTHER;
         body.ip = remoteAddress;
-        this.#source.next([...this.#source, body]);
+        this.#sources.next([...this.#sources, body]);
       }
 
       /** now forward message details for parsing */
@@ -361,7 +361,7 @@ class OSC {
       .filter((destination) => destination.active)
       .forEach((destination) => {
         /** compose arguments for osc message */
-        this.#source.value.forEach((source) => {
+        this.#sources.value.forEach((source) => {
           const id = source.id;
           let isRequested = true;
           if (Array.isArray(destination.requestById)) {
@@ -503,6 +503,6 @@ class OSC {
   }
 
   #settings;
-  #source;
+  #sources;
   #udpPort;
 }

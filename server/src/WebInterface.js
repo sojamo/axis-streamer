@@ -28,11 +28,11 @@ import WebSocket from 'ws';
 
 export default class WebInterface {
   #settings;
-  #source;
+  #sources;
 
   constructor(options = {}) {
     this.#settings = options.settings || {};
-    this.#source = options.source;
+    this.#sources = options.sources;
 
     const _self = this;
     const app = express();
@@ -108,7 +108,7 @@ export default class WebInterface {
     app.use(fileUpload());
 
     app.get('/streams', (req, res) => {
-      res.send(this.#source.value.map((s) => ({ id: s.id, address: s.address })));
+      res.send(this.#sources.value.map((s) => ({ id: s.id, address: s.address })));
     });
 
     app.post('/stream', (req, res) => {
@@ -117,12 +117,12 @@ export default class WebInterface {
       })()
         .then((body) => {
           // increment the stream id
-          const id = this.#source.value.length + 1;
+          const id = this.#sources.value.length + 1;
 
           body.id = id;
           body.address = req.body.address;
           body.mode = BvhBody.MODE_STREAM;
-          this.#source.next([...this.#source.value, body]);
+          this.#sources.next([...this.#sources.value, body]);
 
           res.sendStatus(200);
         })
@@ -133,9 +133,9 @@ export default class WebInterface {
     });
 
     app.delete('/stream/:id', (req, res) => {
-      const index = this.#source.value.findIndex((src) => src.id === req.params.id);
+      const index = this.#sources.value.findIndex((src) => src.id === req.params.id);
       if (index) {
-        this.#source.next(this.#source.value.splice(index, 1));
+        this.#sources.next(this.#sources.value.splice(index, 1));
         res.sendStatus(200);
       }
 
@@ -161,7 +161,7 @@ export default class WebInterface {
     /**  schema { address: string, args: [{ id: Number, data: [{ joints: [x, y, z], ... }]}]}  */
 
     /** collect all data from sources */
-    this.#source.value.forEach((body) => {
+    this.#sources.value.forEach((body) => {
       const id = body.id;
       // console.log(JSON.stringify(body.flat['RightUpLeg']));
       // console.log(JSON.stringify(body.flat['RightUpLeg'].positionAbsolute));

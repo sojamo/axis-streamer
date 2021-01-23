@@ -19,7 +19,7 @@ export default class BvhStream {
   constructor(options = {}) {
     this.#settings = options.settings || new Settings(Settings.default);
     this.initSocket(options.port || 7002);
-    this.#source = options.source;
+    this.#sources = options.sources;
     this.#collect = '';
   }
 
@@ -113,13 +113,13 @@ export default class BvhStream {
         index++;
       }
 
-      /** source is an array of BvhBody(s) */
-      this.#source.value.forEach((body) => {
+      /** sources is an array of BvhBody(s) */
+      this.#sources.value.forEach((body) => {
         log.debug(`
           BvhStream.parseBuffer: 
           id:${body.id}, 
           ip:${body.address}, 
-          total number of sources:${this.#source.value.length}`);
+          total number of sources:${this.#sources.value.length}`);
 
         /** check the incoming data's IP address against the
          * registered IP (as identifier) to then process data.
@@ -134,5 +134,5 @@ export default class BvhStream {
 
   #collect;
   #settings;
-  #source;
+  #sources;
 }

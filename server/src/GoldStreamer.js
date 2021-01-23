@@ -10,8 +10,8 @@ import { BehaviorSubject } from 'rxjs';
 export default class GoldStreamer {
   constructor(settings) {
     this.settings = settings;
-    this.source = new BehaviorSubject([]);
-    this.source.asObservable().subscribe((s) => console.log(s));
+    this.sources = new BehaviorSubject([]);
+    // this.sources.asObservable().subscribe((s) => console.log(s));
     this.initNetwork();
     this.initUpdate();
   }
@@ -45,12 +45,12 @@ export default class GoldStreamer {
 
   initNetwork() {
     /* initialise networking components */
-    const { source, settings } = this;
-    this.web = new WebInterface({ source, settings });
-    this.broadcastFor = new Broadcast({ source, settings });
+    const { sources, settings } = this;
+    this.web = new WebInterface({ sources, settings });
+    this.broadcastFor = new Broadcast({ sources, settings });
     this.broadcastFor.osc = {};
     this.broadcastFor.ws = {};
-    const bvhStream = new BvhStream({ source, settings });
+    const bvhStream = new BvhStream({ sources, settings });
   }
 
   initUpdate() {
@@ -74,7 +74,7 @@ export default class GoldStreamer {
 
   pre() {
     this.update();
-    this.source.value.forEach((body) => body.update());
+    this.sources.value.forEach((body) => body.update());
   }
 
   broadcast() {
