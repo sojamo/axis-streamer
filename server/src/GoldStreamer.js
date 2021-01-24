@@ -11,7 +11,6 @@ export default class GoldStreamer {
   constructor(settings) {
     this.settings = settings;
     this.sources = new BehaviorSubject([]);
-    // this.sources.asObservable().subscribe((s) => console.log(s));
     this.initNetwork();
     this.initUpdate();
   }

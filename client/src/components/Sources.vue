@@ -14,19 +14,19 @@
           <div class="d-flex justify-content-between align-items-center">
             <b>#{{ stream.id }}</b>
             <span>{{ stream.address }}</span>
-            <b-button
+            <!-- <b-button
               class="text-danger"
               size="sm"
               variant="link"
               @click="() => removeStream(stream.id)"
             >
               <b-icon icon="trash" />
-            </b-button>
+            </b-button> -->
           </div>
         </b-card-header>
       </b-card>
 
-      <validation-observer v-slot="{ handleSubmit }">
+      <!-- <validation-observer v-slot="{ handleSubmit }">
         <b-form class="mt-4" @submit.prevent="handleSubmit(addStream)">
           <validation-provider name="IP address" rules="required|ip" v-slot="{ errors }">
             <b-input-group prepend="IP">
@@ -38,7 +38,7 @@
             <small class="text-danger">{{ errors[0] }}</small>
           </validation-provider>
         </b-form>
-      </validation-observer>
+      </validation-observer> -->
 
       <hr class="border-primary w-50 my-5" />
 
@@ -56,43 +56,50 @@ import axios from 'axios';
 const BASE_URL = process.env.VUE_APP_BASE_URL;
 
 export default defineComponent({
+  props: {
+    streams: {
+      type: Array,
+      required: true,
+    },
+  },
+
   setup(props, { emit, root }) {
     // Streams
     ///////////////////////////////////////////////////////////////////////////
-    const streams = ref([]);
+    // const streams = ref([]);
 
-    function getStreams() {
-      return axios.get(`${BASE_URL}/streams`).then((res) => {
-        streams.value = res.data;
-      });
-    }
+    // function getStreams() {
+    //   return axios.get(`${BASE_URL}/streams`).then((res) => {
+    //     streams.value = res.data;
+    //   });
+    // }
 
-    onMounted(getStreams);
+    // onMounted(getStreams);
 
-    const ip = ref('');
+    // const ip = ref('');
 
-    function addStream() {
-      return axios
-        .post(`${BASE_URL}/stream`, { address: ip.value })
-        .then((_) => getStreams())
-        .catch((err) => {
-          root.$bvToast.toast(err.message, { title: 'Oops', variant: 'danger' });
-        });
-    }
+    // function addStream() {
+    //   return axios
+    //     .post(`${BASE_URL}/stream`, { address: ip.value })
+    //     .then((_) => getStreams())
+    //     .catch((err) => {
+    //       root.$bvToast.toast(err.message, { title: 'Oops', variant: 'danger' });
+    //     });
+    // }
 
-    function removeStream(id: number) {
-      return axios
-        .delete(`${BASE_URL}/stream/${id}`)
-        .then((_) => getStreams())
-        .then((_) => emit('stream-removed', id))
-        .catch((err) => console.error(err));
-    }
+    // function removeStream(id: number) {
+    //   return axios
+    //     .delete(`${BASE_URL}/stream/${id}`)
+    //     .then((_) => getStreams())
+    //     .then((_) => emit('stream-removed', id))
+    //     .catch((err) => console.error(err));
+    // }
 
     const streamsRes = {
-      streams,
-      ip,
-      addStream,
-      removeStream,
+      // streams,
+      // ip,
+      // addStream,
+      // removeStream,
     };
 
     // Files
@@ -111,7 +118,7 @@ export default defineComponent({
           .post(`${BASE_URL}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           })
-          .then((res) => console.log(res));
+          .then(res => console.log(res));
       }
     }
 

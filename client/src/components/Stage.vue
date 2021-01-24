@@ -240,17 +240,22 @@ export default defineComponent({
 
         const packet = msgpack.deserialize(ev.data);
         const { address, args } = packet;
-        if (address === 'pn') {
-          args.forEach((el: any) => {
-            target(el);
-          });
-        }
-        if (address === 'settings') {
-          console.log(args);
-          // document.getElementById('settings-label').innerHTML = args.label;
-          // document.getElementById('settings-json').innerHTML = JSON.stringify(args.broadcast, null, 2);
-        } else {
-          /** else we received maybe a system message */
+        switch (address) {
+          case 'pn':
+            args.forEach((el: any) => {
+              target(el);
+            });
+            break;
+
+          case 'settings':
+            console.log(args);
+            // document.getElementById('settings-label').innerHTML = args.label;
+            // document.getElementById('settings-json').innerHTML = JSON.stringify(args.broadcast, null, 2);
+            break;
+
+          case 'sources':
+            console.log(args);
+            break;
         }
       };
     }

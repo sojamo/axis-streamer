@@ -72,6 +72,12 @@ export default class WebInterface {
     this.#ws = new WebSocket.Server({ server });
 
     this.#ws.on('connection', (ws) => {
+      // listen for changes to sources list
+      this.#sources.asObservable().subscribe((sources) => {
+        const bytes = msgpack.serialize({ address: 'sources', args: sources });
+        ws.send(bytes);
+      });
+
       const bytes = msgpack.serialize({ address: 'settings', args: _self.#settings.get });
       ws.send(bytes);
 
@@ -122,6 +128,7 @@ export default class WebInterface {
           body.id = id;
           body.address = req.body.address;
           body.mode = BvhBody.MODE_STREAM;
+          body.active = true;
           this.#sources.next([...this.#sources.value, body]);
 
           res.sendStatus(200);

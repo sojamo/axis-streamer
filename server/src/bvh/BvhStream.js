@@ -10,7 +10,9 @@
  *
  */
 
+import BvhBody from './BvhBody.js';
 import BvhConstants from './BvhConstants.js';
+import BvhParser from './BvhParser.js';
 import Settings from '../Settings.js';
 import { log } from '../Log.js';
 import dgram from 'dgram';
@@ -23,6 +25,10 @@ export default class BvhStream {
     this.#collect = '';
   }
 
+  isKnownSource(ip) {
+    return this.#sources.findIndex((src) => src.address === ip) > -1;
+  }
+
   initSocket(thePort) {
     const client = dgram.createSocket('udp4');
     client.on('error', (err) => {
@@ -31,7 +37,23 @@ export default class BvhStream {
     });
 
     client.on('message', (msg, rinfo) => {
-      this.parseBuffer(msg, rinfo.address);
+      // check if this is a known source
+      const source = this.#sources.value.find((src) => src.address === rinfo.address);
+      if (source) {
+        if (source.active) this.parseBuffer(msg, rinfo.address);
+        return;
+      }
+
+      // if it isn't then add it
+      (async () => (await BvhParser).readFile())()
+        .then((body) => {
+          body.id = this.#sources.value.length + 1;
+          body.address = rinfo.address;
+          body.mode = BvhBody.MODE_STREAM;
+          body.active = false;
+          this.#sources.next([...this.#sources.value, body]);
+        })
+        .catch((err) => console.log(err));
     });
 
     client.on('listening', () => {
