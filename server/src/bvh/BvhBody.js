@@ -3,8 +3,8 @@ import BvhConstants from './BvhConstants.js';
 
 export default class BvhBody {
   constructor(theId) {
-    this.#id = theId;
-    this.#address = '127.0.0.1';
+    this.id = theId;
+    this.address = '127.0.0.1';
     this.#owner = BvhBody.owner.SELF;
     this.#mode = BvhBody.MODE_IDLE;
 
@@ -75,7 +75,11 @@ export default class BvhBody {
       }
       this.processIncomingData({ frameIndex: this.currentFrame, channels });
     } else {
-      console.warn('BvhBody.play(), wrong data-count: should be 354 but is', dataLength, 'cant play frame');
+      console.warn(
+        'BvhBody.play(), wrong data-count: should be 354 but is',
+        dataLength,
+        'cant play frame',
+      );
     }
   }
 
@@ -216,20 +220,12 @@ export default class BvhBody {
 
   /* getter */
 
-  get id() {
-    return this.#id;
-  }
-
   get root() {
     return this.#root;
   }
 
   get flat() {
     return this.#flat;
-  }
-
-  get address() {
-    return this.#address;
   }
 
   get nbFrames() {
@@ -261,10 +257,6 @@ export default class BvhBody {
     this.#frameTime = theValue;
   }
 
-  set id(theId) {
-    this.#id = theId;
-  }
-
   set nbFrames(theValue) {
     this.#nbFrames = theValue;
   }
@@ -280,10 +272,6 @@ export default class BvhBody {
 
   set flat(theValue) {
     this.#flat = theValue;
-  }
-
-  set address(theAddress) {
-    this.#address = theAddress;
   }
 
   set root(theJoint) {
@@ -309,7 +297,7 @@ export default class BvhBody {
     return theVec;
   };
 
-  #address;
+  address;
   #center;
   #currentFrame;
   #flat;

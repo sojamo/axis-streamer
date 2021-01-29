@@ -94,6 +94,13 @@ export default class WebInterface {
         try {
           const result = msgpack.deserialize(m);
           log.debug(`WebInterface: received from ${addr}:${port} ${JSON.stringify(result)}`);
+
+          switch (result.address) {
+            case 'source/activation':
+              const source = this.#sources.value.find((src) => src.id === result.args.sourceId);
+              if (source) source.active = result.args.state;
+              break;
+          }
         } catch (err) {
           log.warn(`WebInterface: not able to deserialize message from ${addr}:${port}`);
         }
@@ -108,53 +115,6 @@ export default class WebInterface {
     });
 
     this.#ws.on('close', () => {});
-
-    // REMINDER: Custom routes
-    // ////////////////////////////////////////////////////////////////////////
-    app.use(fileUpload());
-
-    app.get('/streams', (req, res) => {
-      res.send(this.#sources.value.map((s) => ({ id: s.id, address: s.address })));
-    });
-
-    app.post('/stream', (req, res) => {
-      (async () => {
-        return (await BvhParser).readFile();
-      })()
-        .then((body) => {
-          // increment the stream id
-          const id = this.#sources.value.length + 1;
-
-          body.id = id;
-          body.address = req.body.address;
-          body.mode = BvhBody.MODE_STREAM;
-          body.active = true;
-          this.#sources.next([...this.#sources.value, body]);
-
-          res.sendStatus(200);
-        })
-        .catch((err) => {
-          console.log(err);
-          res.status(500).send('Something went wrong');
-        });
-    });
-
-    app.delete('/stream/:id', (req, res) => {
-      const index = this.#sources.value.findIndex((src) => src.id === req.params.id);
-      if (index) {
-        this.#sources.next(this.#sources.value.splice(index, 1));
-        res.sendStatus(200);
-      }
-
-      res.status(400).send(`Stream with id ${req.params.id} not found.`);
-    });
-
-    app.post('/upload', (req, res) => {
-      if (req.files.bvh) {
-        console.log(bvh);
-      }
-    });
-    // ////////////////////////////////////////////////////////////////////////
 
     server.listen(options.port || 5080, () => {
       const port = server.address().port;

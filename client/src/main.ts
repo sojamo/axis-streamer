@@ -16,6 +16,17 @@ Vue.use(IconsPlugin);
 Vue.component('ValidationObserver', ValidationObserver);
 Vue.component('ValidationProvider', ValidationProvider);
 
+// Setup websocket
+const url = process.env.VUE_APP_WS_URL;
+// window.location.hostname === 'localhost'
+//   ? 'ws://localhost:' + port
+//   : isSecure
+//   ? 'wss://' + window.location.hostname + ':' + port
+//   : 'ws://' + window.location.hostname + ':' + port;
+
+/** start websocket and connect to url */
+Vue.prototype.$ws = new WebSocket(url);
+
 // Add standard rules
 for (let [rule, validation] of Object.entries(rules)) {
   extend(rule, { ...validation });
@@ -23,11 +34,11 @@ for (let [rule, validation] of Object.entries(rules)) {
 
 // Add custom rules
 extend('ip', {
-  validate: (value) => validator.isIP(value),
+  validate: value => validator.isIP(value),
   message: '{_field_} is not a valid IP',
 });
 
 new Vue({
   router,
-  render: (h) => h(App),
+  render: h => h(App),
 }).$mount('#app');
