@@ -1,7 +1,7 @@
 module.exports = {
   lintOnSave: false,
 
-  outputDir: '../public',
+  outputDir: '../server/public',
 
   devServer: {
     proxy: {
