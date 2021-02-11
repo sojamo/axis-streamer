@@ -5,8 +5,8 @@
     "license": "ISC",
     "description": "Reads mocap data streamed from Axis Neuron and distributes via OSC and WebSocket.",
     "scripts": {
-        "help": "yarn node ./start.js --help",
-        "start": "yarn node ./start.js"
+        "help": "yarn node ./app/start.js --help",
+        "start": "yarn node ./app/start.js"
     },
     "dependencies": {
         "@ygoe/msgpack": "^1.0.2",

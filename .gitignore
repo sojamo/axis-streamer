@@ -133,3 +133,5 @@ dist
 *.njsproj
 *.sln
 *.sw?
+
+server/public/

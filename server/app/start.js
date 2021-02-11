@@ -1,8 +1,8 @@
-import Settings from './src/Settings.js';
-import { log } from './src/Log.js';
+import Settings from '../src/Settings.js';
+import { log } from '../src/Log.js';
 import fs from 'fs';
 import minimist from 'minimist';
-import GoldStreamer from './src/GoldStreamer.js';
+import GoldStreamer from '../src/GoldStreamer.js';
 
 const argv = minimist(process.argv.slice(2));
 
