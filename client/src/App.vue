@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <settings :settings="settings" />
+    <settings-component :settingsProperty="settingsObject" />
     <sources :streams.sync="streams" />
     <!-- <stage id="stage" :body.sync="body" /> -->
 
@@ -13,7 +13,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, ref, Ref } from '@vue/composition-api';
-import Settings from './components/Settings.vue';
+import SettingsComponent from './components/Settings.vue';
 import Stage from './components/Stage.vue';
 import Sources from './components/Sources.vue';
 import msgpack from '@ygoe/msgpack';
@@ -21,7 +21,7 @@ import useStage from './hooks/useStage';
 
 export default defineComponent({
   components: {
-    Settings,
+    SettingsComponent,
     Stage,
     Sources,
   },
@@ -29,7 +29,8 @@ export default defineComponent({
   setup(props, { root }) {
     const sketchTemplate: Ref<HTMLElement | undefined> = ref(undefined);
     const streams = ref([]);
-    const settings = ref('');
+    const settingsObject: Ref<Object | undefined> = ref(undefined);
+
 
     onMounted(() => {
       // stage stuff
@@ -71,7 +72,8 @@ export default defineComponent({
             break;
 
           case 'settings':
-            settings.value = JSON.stringify(args, null, 2);
+            settingsObject.value = args;
+            console.log(args.general);
             // document.getElementById('settings-label').innerHTML = args.label;
             // document.getElementById('settings-json').innerHTML = JSON.stringify(args.broadcast, null, 2);
             break;
@@ -84,9 +86,9 @@ export default defineComponent({
     });
 
     return {
-      settings,
       streams,
       sketchTemplate,
+      settingsObject
     };
   },
 });
